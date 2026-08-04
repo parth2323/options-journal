@@ -50,6 +50,15 @@ export function writeDb(db: Database): void {
   }
 }
 
+// Silent wrapper — Vercel's filesystem is read-only; don't let local cache writes crash API routes
+function safeWriteDb(db: Database): void {
+  try {
+    writeDb(db);
+  } catch {
+    // Ignore write failures (e.g. read-only filesystem on Vercel)
+  }
+}
+
 function withTimeout<T>(promiseLike: PromiseLike<T>, ms = 3000): Promise<T> {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error('Timeout')), ms);
@@ -109,13 +118,13 @@ export async function createAccount(data: Omit<Account, 'id' | 'created_at'>): P
       const inserted = res.data as Account;
       const db = readDb();
       db.accounts.push(inserted);
-      writeDb(db);
+      safeWriteDb(db);
       return inserted;
     }
   } catch {}
   const db = readDb();
   db.accounts.push(account);
-  writeDb(db);
+  safeWriteDb(db);
   return account;
 }
 
@@ -128,7 +137,7 @@ export async function updateAccount(id: string, data: Partial<Account>): Promise
       const db = readDb();
       const idx = db.accounts.findIndex((a) => a.id === id);
       if (idx !== -1) db.accounts[idx] = updated;
-      writeDb(db);
+      safeWriteDb(db);
       return updated;
     }
   } catch {}
@@ -136,7 +145,7 @@ export async function updateAccount(id: string, data: Partial<Account>): Promise
   const idx = db.accounts.findIndex((a) => a.id === id);
   if (idx === -1) return null;
   db.accounts[idx] = { ...db.accounts[idx], ...data };
-  writeDb(db);
+  safeWriteDb(db);
   return db.accounts[idx];
 }
 
@@ -149,7 +158,7 @@ export async function deleteAccount(id: string): Promise<boolean> {
       const db = readDb();
       db.accounts = db.accounts.filter((a) => a.id !== id);
       db.trades = db.trades.filter((t) => t.account_id !== id);
-      writeDb(db);
+      safeWriteDb(db);
       return true;
     }
   } catch {}
@@ -157,7 +166,7 @@ export async function deleteAccount(id: string): Promise<boolean> {
   const before = db.accounts.length;
   db.accounts = db.accounts.filter((a) => a.id !== id);
   db.trades = db.trades.filter((t) => t.account_id !== id);
-  writeDb(db);
+  safeWriteDb(db);
   return db.accounts.length < before;
 }
 
@@ -207,13 +216,13 @@ export async function createTrade(data: Omit<Trade, 'id' | 'net_pnl' | 'created_
       const inserted = res.data as Trade;
       const db = readDb();
       db.trades.push(inserted);
-      writeDb(db);
+      safeWriteDb(db);
       return inserted;
     }
   } catch {}
   const db = readDb();
   db.trades.push(trade);
-  writeDb(db);
+  safeWriteDb(db);
   return trade;
 }
 
@@ -242,13 +251,13 @@ export async function duplicateTrade(id: string): Promise<Trade | null> {
       const inserted = res.data as Trade;
       const db = readDb();
       db.trades.push(inserted);
-      writeDb(db);
+      safeWriteDb(db);
       return inserted;
     }
   } catch {}
   const db = readDb();
   db.trades.push(copy);
-  writeDb(db);
+  safeWriteDb(db);
   return copy;
 }
 
@@ -274,7 +283,7 @@ export async function updateTrade(id: string, data: Partial<Trade>): Promise<Tra
       const db = readDb();
       const idx = db.trades.findIndex((t) => t.id === id);
       if (idx !== -1) db.trades[idx] = updated;
-      writeDb(db);
+      safeWriteDb(db);
       return updated;
     }
   } catch {}
@@ -282,7 +291,7 @@ export async function updateTrade(id: string, data: Partial<Trade>): Promise<Tra
   const idx = db.trades.findIndex((t) => t.id === id);
   if (idx === -1) return null;
   db.trades[idx] = { ...db.trades[idx], ...payload };
-  writeDb(db);
+  safeWriteDb(db);
   return db.trades[idx];
 }
 
@@ -293,14 +302,14 @@ export async function deleteTrade(id: string): Promise<boolean> {
     if (!res.error) {
       const db = readDb();
       db.trades = db.trades.filter((t) => t.id !== id);
-      writeDb(db);
+      safeWriteDb(db);
       return true;
     }
   } catch {}
   const db = readDb();
   const before = db.trades.length;
   db.trades = db.trades.filter((t) => t.id !== id);
-  writeDb(db);
+  safeWriteDb(db);
   return db.trades.length < before;
 }
 
@@ -331,13 +340,13 @@ export async function createConfluenceTag(data: Omit<ConfluenceTag, 'id'>): Prom
       const inserted = res.data as ConfluenceTag;
       const db = readDb();
       db.confluence_tags.push(inserted);
-      writeDb(db);
+      safeWriteDb(db);
       return inserted;
     }
   } catch {}
   const db = readDb();
   db.confluence_tags.push(tag);
-  writeDb(db);
+  safeWriteDb(db);
   return tag;
 }
 
@@ -350,7 +359,7 @@ export async function updateConfluenceTag(id: string, data: Partial<ConfluenceTa
       const db = readDb();
       const idx = db.confluence_tags.findIndex((t) => t.id === id);
       if (idx !== -1) db.confluence_tags[idx] = updated;
-      writeDb(db);
+      safeWriteDb(db);
       return updated;
     }
   } catch {}
@@ -358,7 +367,7 @@ export async function updateConfluenceTag(id: string, data: Partial<ConfluenceTa
   const idx = db.confluence_tags.findIndex((t) => t.id === id);
   if (idx === -1) return null;
   db.confluence_tags[idx] = { ...db.confluence_tags[idx], ...data };
-  writeDb(db);
+  safeWriteDb(db);
   return db.confluence_tags[idx];
 }
 
@@ -369,14 +378,14 @@ export async function deleteConfluenceTag(id: string): Promise<boolean> {
     if (!res.error) {
       const db = readDb();
       db.confluence_tags = db.confluence_tags.filter((t) => t.id !== id);
-      writeDb(db);
+      safeWriteDb(db);
       return true;
     }
   } catch {}
   const db = readDb();
   const before = db.confluence_tags.length;
   db.confluence_tags = db.confluence_tags.filter((t) => t.id !== id);
-  writeDb(db);
+  safeWriteDb(db);
   return db.confluence_tags.length < before;
 }
 
@@ -511,14 +520,14 @@ export async function updateRoutine(data: RoutineData): Promise<RoutineData> {
       const saved = res.data as RoutineData;
       const db = readDb();
       (db as any).routine = saved;
-      writeDb(db);
+      safeWriteDb(db);
       return saved;
     }
   } catch {}
 
   const db = readDb();
   (db as any).routine = updated;
-  writeDb(db);
+  safeWriteDb(db);
   return updated;
 }
 
