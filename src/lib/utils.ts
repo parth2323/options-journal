@@ -36,7 +36,15 @@ export function formatDate(dateStr: string): string {
 
 export function formatDateTime(dateStr: string): string {
   try {
-    return format(new Date(dateStr), 'MMM d, yyyy h:mm a')
+    return format(new Date(dateStr), 'MMM d, yyyy h:mm:ss a')
+  } catch {
+    return dateStr
+  }
+}
+
+export function formatTimeOnly(dateStr: string): string {
+  try {
+    return format(new Date(dateStr), 'h:mm:ss a')
   } catch {
     return dateStr
   }

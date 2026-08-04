@@ -90,7 +90,9 @@ html.light [class*="bg-[#161622]"] { background-color: #ffffff !important; }
 html.light [class*="bg-[#171724]"] { background-color: #f8f9fc !important; }
 html.light [class*="bg-[#181826]"] { background-color: #ffffff !important; }
 html.light [class*="bg-[#191926]"] { background-color: #f8f9fc !important; }
-html.light [class*="bg-[#1c1c2b]"] { background-color: #f1f3f9 !important; }
+html.light [class*="bg-[#14141f]"] { background-color: #ffffff !important; }
+html.light [class*="bg-[#181828]"] { background-color: #f0f3ff !important; }
+html.light [class*="bg-[#0c0c14]"] { background-color: #ffffff !important; }
 html.light [class*="bg-[#1a1a1a]"] { background-color: var(--t-b1) !important; }
 html.light [class*="bg-[#202030]"] { background-color: #f3f4f6 !important; }
 html.light [class*="bg-[#222234]"] { background-color: #f3f4f6 !important; }
@@ -135,30 +137,6 @@ html.light [class*="text-[#2a2a2a]"] { color: #4b5563 !important; }
 html.light [class*="text-[#555]"]    { color: #4b5563 !important; }
 html.light [class*="text-[#444]"]    { color: #4b5563 !important; }
 
-/* Ensure gray-100 / gray-200 / gray-300 / gray-400 / gray-500 font colors don't wash out in light mode */
-html.light [class*="text-gray-100"],
-html.light [class*="text-gray-200"],
-html.light [class*="text-gray-300"],
-html.light [class*="text-gray-400"] { color: #374151 !important; }
-
-html.light [class*="text-gray-500"],
-html.light [class*="text-gray-600"],
-html.light [class*="text-gray-700"],
-html.light [class*="text-gray-800"],
-html.light [class*="text-gray-900"] { color: #111827 !important; }
-
-html.light [class*="text-slate-100"],
-html.light [class*="text-slate-200"],
-html.light [class*="text-slate-300"],
-html.light [class*="text-slate-400"] { color: #334155 !important; }
-
-html.light [class*="text-slate-500"],
-html.light [class*="text-slate-600"],
-html.light [class*="text-slate-700"],
-html.light [class*="text-slate-800"],
-html.light [class*="text-slate-900"] { color: #0f172a !important; }
-
-/* Dynamic PnL text contrast in light mode */
 html.light [class*="text-emerald-400"] { color: #059669 !important; }
 html.light [class*="text-red-400"]     { color: #dc2626 !important; }
 html.light [class*="text-yellow-400"]  { color: #d97706 !important; }
@@ -214,7 +192,6 @@ html.light textarea:focus {
 
 html.light ::-webkit-scrollbar-thumb { background: #c1c1c8; }
 html.light ::-webkit-scrollbar-thumb:hover { background: #a1a1a8; }
-
 
 @theme {
   --color-background: #0f0f0f;
@@ -306,18 +283,237 @@ body {
   background: #4a4a4a;
 }
 
-/* Notion-style subtle table rows */
+/* ─── Glassmorphism utilities ─────────────────────────────────────── */
+.glass {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-drawer {
+  background: rgba(8, 8, 16, 0.88) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  border-left: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+html.light .glass {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.06);
+}
+
+html.light .glass-drawer {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-left: 1px solid #e2e8f0 !important;
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.08) !important;
+}
+
+html.light .drawer-card {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+html.light .drawer-hero-win {
+  background-color: #f0fdf4 !important;
+  border-color: #bbf7d0 !important;
+}
+
+html.light .drawer-hero-loss {
+  background-color: #fef2f2 !important;
+  border-color: #fecaca !important;
+}
+
+html.light .drawer-hero-be {
+  background-color: #fffbeb !important;
+  border-color: #fde68a !important;
+}
+
+html.light .form-calc-card {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+html.light .form-calc-card .calc-label {
+  color: #64748b !important;
+}
+
+html.light .form-calc-card .calc-subtext {
+  color: #94a3b8 !important;
+}
+
+/* Trade row result indicators (Clean left accent border, no full background color bleed) */
 .trade-row-win {
-  background: var(--color-win-bg);
-  border-left: 2px solid var(--color-win);
+  border-left: 3px solid #10b981;
 }
 .trade-row-loss {
-  background: var(--color-loss-bg);
-  border-left: 2px solid var(--color-loss);
+  border-left: 3px solid #ef4444;
 }
 .trade-row-breakeven {
-  background: var(--color-breakeven-bg);
-  border-left: 2px solid var(--color-breakeven);
+  border-left: 3px solid #f59e0b;
+}
+
+html.light .trade-row-win {
+  border-left: 3px solid #10b981;
+}
+html.light .trade-row-loss {
+  border-left: 3px solid #ef4444;
+}
+html.light .trade-row-breakeven {
+  border-left: 3px solid #f59e0b;
+}
+
+/* Light mode badge background overrides */
+html.light .badge-bull {
+  background-color: #ecfdf5 !important;
+  color: #047857 !important;
+  border-color: #a7f3d0 !important;
+}
+
+html.light .badge-bear {
+  background-color: #fef2f2 !important;
+  color: #b91c1c !important;
+  border-color: #fecaca !important;
+}
+
+html.light .badge-win {
+  background-color: #ecfdf5 !important;
+  color: #047857 !important;
+  border-color: #a7f3d0 !important;
+}
+
+html.light .badge-loss {
+  background-color: #fef2f2 !important;
+  color: #b91c1c !important;
+  border-color: #fecaca !important;
+}
+
+html.light .badge-breakeven {
+  background-color: #fffbeb !important;
+  color: #b45309 !important;
+  border-color: #fde68a !important;
+}
+
+html.light .badge-qty {
+  background-color: #e0e7ff !important;
+  color: #000000 !important;
+  border-color: #c7d2fe !important;
+}
+
+html.light .badge-account {
+  background-color: #f1f5f9 !important;
+  color: #334155 !important;
+  border-color: #cbd5e1 !important;
+}
+
+/* ── LIGHT MODE OVERRIDES FOR ALL ICON & ACCOUNT BADGES ────────────────── */
+html.light .kpi-icon-indigo {
+  background-color: #e0e7ff !important;
+  border-color: #c7d2fe !important;
+  color: #4338ca !important;
+}
+
+html.light .kpi-icon-green {
+  background-color: #ecfdf5 !important;
+  border-color: #a7f3d0 !important;
+  color: #047857 !important;
+}
+
+html.light .kpi-icon-red {
+  background-color: #fef2f2 !important;
+  border-color: #fecaca !important;
+  color: #b91c1c !important;
+}
+
+html.light .kpi-icon-amber {
+  background-color: #fffbeb !important;
+  border-color: #fde68a !important;
+  color: #b45309 !important;
+}
+
+html.light .badge-live {
+  background-color: #ecfdf5 !important;
+  border-color: #a7f3d0 !important;
+  color: #047857 !important;
+}
+
+html.light .badge-backtest {
+  background-color: #e0e7ff !important;
+  border-color: #c7d2fe !important;
+  color: #3730a3 !important;
+}
+
+html.light .badge-started {
+  background-color: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #475569 !important;
+}
+
+/* ── GLASSMORPHISM TAB FILTER BUTTONS ───────────────────────────── */
+.tab-filter-bar {
+  background-color: rgba(20, 20, 25, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  padding: 3px;
+  border-radius: 12px;
+}
+
+html.light .tab-filter-bar {
+  background-color: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+}
+
+.tab-filter-btn {
+  padding: 5px 12px;
+  font-size: 11px;
+  font-weight: 800;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  color: #a0a0a0;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.tab-filter-btn:hover {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+html.light .tab-filter-btn {
+  color: #475569 !important;
+}
+
+html.light .tab-filter-btn:hover {
+  color: #0f172a !important;
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+.tab-filter-btn-active {
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.95), rgba(99, 102, 241, 0.85)) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(165, 180, 252, 0.4) !important;
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+  backdrop-filter: blur(10px);
+}
+
+html.light .tab-filter-btn-active {
+  background: linear-gradient(135deg, #4f46e5, #6366f1) !important;
+  color: #ffffff !important;
+  border-color: #818cf8 !important;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35) !important;
+}
+
+/* Result badge glow animation */
+@keyframes badge-pop {
+  from { transform: scale(0.88); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
 }
 
 /* Circular progress ring */
@@ -360,9 +556,9 @@ body {
 }
 
 html.light .tag-pill-selected {
-  background-color: #e0e7ff;
-  color: #3730a3;
-  border-color: #c7d2fe;
+  background-color: #e0e7ff !important;
+  color: #3730a3 !important;
+  border-color: #c7d2fe !important;
 }
 
 .tag-pill-available {
@@ -378,6 +574,12 @@ html.light .tag-pill-selected {
   border: 1px solid var(--t-border);
   transition: all 0.15s ease;
   cursor: pointer;
+}
+
+html.light .tag-pill-available {
+  background-color: #f1f5f9 !important;
+  color: #334155 !important;
+  border-color: #cbd5e1 !important;
 }
 
 .tag-pill-available:hover {

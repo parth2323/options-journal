@@ -40,13 +40,15 @@ export function DuplicateButton({ tradeId, variant = 'icon', onSuccess }: Duplic
       <button
         onClick={handleDuplicate}
         disabled={state !== 'idle'}
-        className="flex items-center gap-2 w-full px-3 py-2 text-[12px] font-medium rounded-lg transition-all
-          text-[#a0a0a0] hover:text-[#e8e8e8] hover:bg-[#1e1e1e] disabled:opacity-50"
+        className="flex items-center justify-center gap-2 w-full py-2.5 text-xs font-bold rounded-xl transition-all shadow-sm
+          bg-white border border-slate-200 text-slate-700 hover:text-indigo-600 hover:bg-slate-50
+          dark:glass dark:text-[#a0a0a0] dark:hover:text-[#e8e8e8] dark:hover:bg-white/[0.06]
+          disabled:opacity-50 cursor-pointer active:scale-95"
       >
         {state === 'loading' ? (
           <Loader2 className="w-3.5 h-3.5 animate-spin" />
         ) : state === 'done' ? (
-          <Check className="w-3.5 h-3.5 text-emerald-400" />
+          <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
         ) : (
           <Copy className="w-3.5 h-3.5" />
         )}

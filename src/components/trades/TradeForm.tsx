@@ -15,8 +15,9 @@ import {
   calculateRoiPercent,
   formatCurrency,
   formatPercent,
+  cn,
 } from '@/lib/utils';
-import { X, Plus, TrendingUp, ShieldAlert, Zap, Hash } from 'lucide-react';
+import { X, Plus, TrendingUp, ShieldAlert, Zap, Hash, Calculator } from 'lucide-react';
 
 const tradeSchema = z.object({
   account_id: z.string().min(1, 'Account is required'),
@@ -43,11 +44,11 @@ const tradeSchema = z.object({
 type TradeFormValues = z.infer<typeof tradeSchema>;
 interface TradeFormProps { accounts: Account[]; tags: ConfluenceTag[]; existing?: Trade; }
 
-/* ─── Shared style atoms ─────────────────────────────────────────────────── */
+/* ─── Shared style atoms (Clean Light & Dark mode dual tokens) ─────────────── */
 const inp =
-  'w-full bg-[#0d0d0d] border border-[#1e1e1e] rounded-xl px-3 py-2 text-[13px] text-[var(--t-fg)] ' +
-  'placeholder-[#2e2e2e] focus:outline-none focus:border-indigo-500/70 focus:bg-[#101018] ' +
-  'focus:ring-1 focus:ring-indigo-500/20 transition-all duration-200';
+  'w-full rounded-xl px-3 py-2 text-[13px] transition-all duration-200 shadow-xs ' +
+  'bg-white border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 ' +
+  'dark:bg-[#141419] dark:border-white/10 dark:text-[#e8e8e8] dark:placeholder-[#555555] dark:focus:bg-[#1a1a22] dark:focus:border-indigo-500';
 
 const sel = `${inp} cursor-pointer appearance-none`;
 
@@ -59,25 +60,25 @@ const Fld = ({
 }) => (
   <div className={`group relative ${className}`}>
     <div className="flex items-center gap-1.5 mb-1.5">
-      <span className="text-[10px] font-bold tracking-[0.1em] uppercase text-[#3a3a3a] group-focus-within:text-indigo-400/80 transition-colors duration-200">
+      <span className="text-[10px] font-extrabold tracking-wider uppercase text-slate-600 dark:text-[#737373] group-focus-within:text-indigo-600 dark:group-focus-within:text-indigo-400 transition-colors duration-200">
         {label}
       </span>
       {badge && (
-        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20">
           {badge}
         </span>
       )}
     </div>
     {children}
-    {error && <p className="text-[9px] text-red-400/80 mt-1">{error}</p>}
+    {error && <p className="text-[9px] text-red-500 dark:text-red-400 mt-1 font-semibold">{error}</p>}
   </div>
 );
 
 /* Section divider with label */
 const Section = ({ label, icon: Icon }: { label: string; icon?: React.ComponentType<{ className?: string }> }) => (
-  <div className="flex items-center gap-2 pt-1 pb-0.5">
-    {Icon && <Icon className="w-3 h-3 text-indigo-400/60" />}
-    <span className="text-[10px] font-bold tracking-[0.15em] uppercase text-indigo-400/60">{label}</span>
+  <div className="flex items-center gap-2 pt-2 pb-1 border-b border-slate-100 dark:border-white/10 mb-1">
+    {Icon && <Icon className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />}
+    <span className="text-xs font-black tracking-wider uppercase text-indigo-600 dark:text-indigo-400">{label}</span>
     <div className="flex-1 h-px bg-gradient-to-r from-indigo-500/20 to-transparent" />
   </div>
 );
@@ -93,12 +94,29 @@ export function TradeForm({ accounts, tags, existing }: TradeFormProps) {
     accounts.find((a) => a.account_type === 'live') ??
     accounts[0];
 
-  const get10AMToday = () => {
-    const d = new Date();
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const dd = String(d.getDate()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd}T10:00`;
+  const formatDatetimeForInput = (dateStr?: string) => {
+    if (!dateStr) {
+      const d = new Date();
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      const hh = String(d.getHours()).padStart(2, '0');
+      const min = String(d.getMinutes()).padStart(2, '0');
+      const ss = String(d.getSeconds()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}T${hh}:${min}:${ss}`;
+    }
+    try {
+      const d = new Date(dateStr);
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      const hh = String(d.getHours()).padStart(2, '0');
+      const min = String(d.getMinutes()).padStart(2, '0');
+      const ss = String(d.getSeconds()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}T${hh}:${min}:${ss}`;
+    } catch {
+      return dateStr.slice(0, 19);
+    }
   };
 
   const defaults: Partial<TradeFormValues> = existing ? {
@@ -107,8 +125,8 @@ export function TradeForm({ accounts, tags, existing }: TradeFormProps) {
     contract_label: existing.contract_label,
     instrument_type: existing.instrument_type,
     direction: existing.direction,
-    opened_at: existing.opened_at ? existing.opened_at.slice(0, 16) : get10AMToday(),
-    closed_at: existing.closed_at ? existing.closed_at.slice(0, 16) : get10AMToday(),
+    opened_at: formatDatetimeForInput(existing.opened_at),
+    closed_at: existing.closed_at ? formatDatetimeForInput(existing.closed_at) : formatDatetimeForInput(),
     timezone: existing.timezone,
     quantity: existing.quantity,
     entry_price: existing.entry_price,
@@ -131,8 +149,8 @@ export function TradeForm({ accounts, tags, existing }: TradeFormProps) {
     commission: 0,
     quantity: 1,
     timezone: 'America/New_York',
-    opened_at: get10AMToday(),
-    closed_at: get10AMToday(),
+    opened_at: formatDatetimeForInput(),
+    closed_at: formatDatetimeForInput(),
   };
 
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<TradeFormValues>({
@@ -151,6 +169,15 @@ export function TradeForm({ accounts, tags, existing }: TradeFormProps) {
   const netPnl = (Number(grossPnl) || 0) - (Number(commission) || 0);
   const amountRisked = calculateAmountRisked({ entryPrice: Number(entryPrice) || null, quantity: Number(quantity) || 1, instrumentType });
   const roiPercent = calculateRoiPercent({ netPnl, amountRisked });
+
+  // Set current live local time on initial mount for new trades
+  useEffect(() => {
+    if (!existing) {
+      const nowStr = formatDatetimeForInput();
+      setValue('opened_at', nowStr);
+      setValue('closed_at', nowStr);
+    }
+  }, [existing, setValue]);
 
   useEffect(() => {
     const ep = Number(entryPrice), xp = Number(exitPrice);
@@ -187,11 +214,52 @@ export function TradeForm({ accounts, tags, existing }: TradeFormProps) {
   };
   const removeTag = (tag: string) => setSelectedTags(selectedTags.filter((t) => t !== tag));
 
-  /* Derived colours */
-  const netPositive = netPnl > 0, netNegative = netPnl < 0;
-
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3.5">
+    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+
+      {/* ── LIVE AUTO-CALCULATED PNL & RISK BANNER ───────────────────────── */}
+      {(entryPrice && exitPrice) ? (
+        <div className={cn(
+          'p-4 rounded-2xl border transition-all flex flex-wrap items-center justify-between gap-3 shadow-xs',
+          netPnl > 0
+            ? 'bg-emerald-50/90 border-emerald-200 text-emerald-950 dark:bg-emerald-950/40 dark:border-emerald-800/40 dark:text-emerald-300'
+            : netPnl < 0
+            ? 'bg-red-50/90 border-red-200 text-red-950 dark:bg-red-950/40 dark:border-red-800/40 dark:text-red-300'
+            : 'bg-amber-50/90 border-amber-200 text-amber-950 dark:bg-amber-950/40 dark:border-amber-800/40 dark:text-amber-300',
+        )}>
+          <div className="flex items-center gap-2">
+            <Calculator className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+            <div>
+              <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-500 dark:text-[#737373]">Live Net PnL Preview</p>
+              <p className={cn(
+                'text-2xl font-black font-mono tracking-tight',
+                netPnl > 0 ? 'text-emerald-600 dark:text-emerald-400'
+                : netPnl < 0 ? 'text-red-600 dark:text-red-400'
+                : 'text-amber-600 dark:text-amber-400',
+              )}>
+                {formatCurrency(netPnl, true)}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4 text-xs font-mono">
+            <div>
+              <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-[#737373] block">Gross PnL</span>
+              <span className="font-bold text-slate-900 dark:text-[#e8e8e8]">{formatCurrency(Number(grossPnl) || 0, true)}</span>
+            </div>
+            <div>
+              <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-[#737373] block">Comm</span>
+              <span className="font-bold text-red-600 dark:text-red-400">-{formatCurrency(Number(commission) || 0)}</span>
+            </div>
+            {roiPercent != null && (
+              <div>
+                <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-[#737373] block">ROI</span>
+                <span className="font-bold text-indigo-600 dark:text-indigo-400">{formatPercent(roiPercent)}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : null}
 
       {/* ── TRADE IDENTITY ─────────────────────────────────────────────── */}
       <Section label="Trade Identity" icon={Hash} />
@@ -202,11 +270,11 @@ export function TradeForm({ accounts, tags, existing }: TradeFormProps) {
               <option value="">Select account…</option>
               {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
             </select>
-            <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#737373]">▾</div>
+            <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#737373]">▾</div>
           </div>
         </Fld>
         <Fld label="Symbol" error={errors.symbol?.message}>
-          <input {...register('symbol')} placeholder="SPY, TSLA, QQQ…" className={`${inp} font-mono`} />
+          <input {...register('symbol')} placeholder="SPY, TSLA, QQQ…" className={`${inp} font-mono uppercase font-bold`} />
         </Fld>
         <Fld label="Contract Label">
           <input {...register('contract_label')} placeholder="SPY 747P 0110…" className={`${inp} font-mono`} />
@@ -219,13 +287,13 @@ export function TradeForm({ accounts, tags, existing }: TradeFormProps) {
               <option value="futures">Futures</option>
               <option value="crypto">Crypto</option>
             </select>
-            <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#737373]">▾</div>
+            <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#737373]">▾</div>
           </div>
         </Fld>
       </div>
 
       {/* ── TRADE SETUP ────────────────────────────────────────────────── */}
-      <Section label="Setup" icon={Zap} />
+      <Section label="Setup & Time" icon={Zap} />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Fld label="Direction">
           <div className="relative">
@@ -236,7 +304,7 @@ export function TradeForm({ accounts, tags, existing }: TradeFormProps) {
               <option value="put_long">📈 Put Long</option>
               <option value="put_short">📉 Put Short</option>
             </select>
-            <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#737373]">▾</div>
+            <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#737373]">▾</div>
           </div>
         </Fld>
         <Fld label="Session">
@@ -248,14 +316,14 @@ export function TradeForm({ accounts, tags, existing }: TradeFormProps) {
               <option value="asia">🏯 Asia</option>
               <option value="sydney">🦘 Sydney</option>
             </select>
-            <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#737373]">▾</div>
+            <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#737373]">▾</div>
           </div>
         </Fld>
         <Fld label="Opened At" error={errors.opened_at?.message}>
-          <input type="datetime-local" {...register('opened_at')} className={inp} />
+          <input type="datetime-local" step="1" {...register('opened_at')} className={inp} />
         </Fld>
         <Fld label="Closed At">
-          <input type="datetime-local" {...register('closed_at')} className={inp} />
+          <input type="datetime-local" step="1" {...register('closed_at')} className={inp} />
         </Fld>
       </div>
 
@@ -268,133 +336,69 @@ export function TradeForm({ accounts, tags, existing }: TradeFormProps) {
         <Fld label="Exit Price / share">
           <input type="number" step="0.0001" {...register('exit_price')} placeholder="0.00" className={`${inp} font-mono`} />
         </Fld>
-        <Fld label="Qty (Contracts)" error={errors.quantity?.message}>
-          <input type="number" step="0.01" min="0.01" {...register('quantity')} className={`${inp} font-mono`} />
+        <Fld label="Quantity (Contracts)">
+          <input type="number" step="1" {...register('quantity')} placeholder="1" className={`${inp} font-mono font-bold`} />
         </Fld>
-        <Fld label="Commission">
-          <input type="number" step="0.01" min="0" {...register('commission')} placeholder="0.00" className={`${inp} font-mono`} />
+        <Fld label="Commission ($)">
+          <input type="number" step="0.01" {...register('commission')} placeholder="0.00" className={`${inp} font-mono text-red-600 dark:text-red-400`} />
         </Fld>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <Fld label="Gross PnL">
-          <input type="number" step="0.01" {...register('gross_pnl')}
-            onBlur={() => setValue('result', suggestResult(netPnl))}
-            placeholder="0.00" className={`${inp} font-mono`} />
-        </Fld>
-
-        {/* ── NET PNL auto box ── */}
-        <div className={`relative rounded-xl overflow-hidden border-2 transition-all duration-300 p-3.5 flex flex-col justify-between ${
-          netPositive
-            ? 'border-emerald-500/50 bg-emerald-500/10 dark:bg-emerald-950/30'
-            : netNegative
-            ? 'border-red-500/50 bg-red-500/10 dark:bg-red-950/30'
-            : 'border-amber-500/40 bg-amber-500/10 dark:bg-amber-950/20'
-        }`}>
+      {/* ── AUTO-CALCULATED CARDS ───────────────────────────────────────── */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {/* Gross PnL Card */}
+        <div className="form-calc-card bg-white border border-slate-200 shadow-xs dark:bg-[#141419] dark:border-white/10 rounded-2xl p-4">
           <div className="flex items-center justify-between">
-            <span className={`text-[10px] font-black tracking-[0.12em] uppercase ${
-              netPositive ? 'text-emerald-700 dark:text-emerald-400' : netNegative ? 'text-red-700 dark:text-red-400' : 'text-amber-700 dark:text-amber-400'
-            }`}>
-              Net PnL
-            </span>
-            <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-              netPositive
-                ? 'bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30'
-                : netNegative
-                ? 'bg-red-500/20 text-red-800 dark:text-red-300 border border-red-500/30'
-                : 'bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/30'
-            }`}>
-              AUTO
-            </span>
+            <span className="calc-label text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-[#737373]">Gross PnL</span>
+            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20">AUTO</span>
           </div>
-          <div className={`text-[24px] font-black font-mono tracking-tight leading-tight mt-1 ${
-            netPositive ? 'text-emerald-700 dark:text-emerald-400' : netNegative ? 'text-red-700 dark:text-red-400' : 'text-amber-700 dark:text-amber-400'
+          <div className={`text-2xl font-black font-mono tracking-tight mt-1.5 ${
+            Number(grossPnl) > 0 ? 'text-emerald-600 dark:text-emerald-400'
+            : Number(grossPnl) < 0 ? 'text-red-600 dark:text-red-400'
+            : 'text-slate-400 dark:text-slate-600'
           }`}>
-            {netPnl >= 0 ? '+' : ''}${netPnl.toFixed(2)}
+            {formatCurrency(Number(grossPnl) || 0, true)}
           </div>
-          <div className="text-[10px] text-gray-600 dark:text-gray-400 font-mono mt-1">
-            Gross ${Number(grossPnl || 0).toFixed(2)} − Comm ${Number(commission || 0).toFixed(2)}
-          </div>
+          <p className="calc-subtext text-[10px] text-slate-400 dark:text-[#737373] mt-1 font-mono">
+            {entryPrice && exitPrice ? `($${exitPrice} - $${entryPrice}) × 100 × ${quantity}` : 'Calculated on entry/exit'}
+          </p>
         </div>
 
-        {/* ── MAX RISK auto box ── */}
-        <div className={`relative rounded-xl overflow-hidden border-2 transition-all duration-300 p-3.5 flex flex-col justify-between ${
-          amountRisked != null
-            ? 'border-orange-500/50 bg-orange-500/10 dark:bg-orange-950/30'
-            : 'border-gray-200 dark:border-[#1e1e1e] bg-gray-50 dark:bg-[#0d0d0d]'
-        }`}>
+        {/* Capital Risked Card */}
+        <div className="form-calc-card bg-white border border-slate-200 shadow-xs dark:bg-[#141419] dark:border-white/10 rounded-2xl p-4">
           <div className="flex items-center justify-between">
-            <span className={`text-[10px] font-black tracking-[0.12em] uppercase ${
-              amountRisked != null ? 'text-orange-700 dark:text-orange-400' : 'text-gray-500 dark:text-gray-400'
-            }`}>
-              Max Risk
-            </span>
-            <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-              amountRisked != null
-                ? 'bg-orange-500/20 text-orange-800 dark:text-orange-300 border border-orange-500/30'
-                : 'bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
-            }`}>
-              AUTO
-            </span>
+            <span className="calc-label text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-[#737373]">Amount Risked</span>
+            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">AUTO</span>
           </div>
-          <div className={`text-[24px] font-black font-mono tracking-tight leading-tight mt-1 ${
-            amountRisked != null ? 'text-orange-700 dark:text-orange-400' : 'text-gray-400 dark:text-gray-600'
-          }`}>
+          <div className="text-2xl font-black font-mono tracking-tight text-slate-900 dark:text-[#e8e8e8] mt-1.5">
             {amountRisked != null ? formatCurrency(amountRisked) : '—'}
           </div>
-          <div className="text-[10px] text-orange-800/80 dark:text-orange-300/80 font-mono mt-1">
-            {amountRisked != null
-              ? `$${Number(entryPrice).toFixed(2)} × 100 × ${Number(quantity) || 1}`
-              : 'Enter entry & qty'}
-          </div>
+          <p className="calc-subtext text-[10px] text-slate-400 dark:text-[#737373] mt-1 font-mono">
+            {amountRisked != null ? `$${Number(entryPrice).toFixed(2)} × 100 × ${Number(quantity) || 1}` : 'Enter entry & quantity'}
+          </p>
         </div>
 
-        {/* ── ROI % auto box ── */}
-        <div className={`relative rounded-xl overflow-hidden border-2 transition-all duration-300 p-3.5 flex flex-col justify-between ${
-          roiPercent == null
-            ? 'border-gray-200 dark:border-[#1e1e1e] bg-gray-50 dark:bg-[#0d0d0d]'
-            : roiPercent >= 0
-            ? 'border-emerald-500/50 bg-emerald-500/10 dark:bg-emerald-950/30'
-            : 'border-red-500/50 bg-red-500/10 dark:bg-red-950/30'
-        }`}>
+        {/* ROI % Card */}
+        <div className="form-calc-card bg-white border border-slate-200 shadow-xs dark:bg-[#141419] dark:border-white/10 rounded-2xl p-4">
           <div className="flex items-center justify-between">
-            <span className={`text-[10px] font-black tracking-[0.12em] uppercase ${
-              roiPercent == null
-                ? 'text-gray-500 dark:text-gray-400'
-                : roiPercent >= 0
-                ? 'text-emerald-700 dark:text-emerald-400'
-                : 'text-red-700 dark:text-red-400'
-            }`}>
-              ROI %
-            </span>
-            <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-              roiPercent == null
-                ? 'bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
-                : roiPercent >= 0
-                ? 'bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30'
-                : 'bg-red-500/20 text-red-800 dark:text-red-300 border border-red-500/30'
-            }`}>
-              AUTO
-            </span>
+            <span className="calc-label text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-[#737373]">ROI %</span>
+            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20">AUTO</span>
           </div>
-          <div className={`text-[24px] font-black font-mono tracking-tight leading-tight mt-1 ${
-            roiPercent == null
-              ? 'text-gray-400 dark:text-gray-600'
-              : roiPercent >= 0
-              ? 'text-emerald-700 dark:text-emerald-400'
-              : 'text-red-700 dark:text-red-400'
+          <div className={`text-2xl font-black font-mono tracking-tight mt-1.5 ${
+            roiPercent != null && roiPercent >= 0 ? 'text-emerald-600 dark:text-emerald-400'
+            : roiPercent != null ? 'text-red-600 dark:text-red-400'
+            : 'text-slate-400 dark:text-slate-600'
           }`}>
             {roiPercent != null ? `${roiPercent >= 0 ? '+' : ''}${formatPercent(roiPercent)}` : '—'}
           </div>
-          <div className="text-[10px] text-gray-600 dark:text-gray-400 font-mono mt-1">
-            {roiPercent != null && amountRisked != null
-              ? `${netPnl >= 0 ? '+' : ''}$${netPnl.toFixed(2)} ÷ $${amountRisked.toFixed(0)}`
-              : 'Calculated on risk'}
-          </div>
+          <p className="calc-subtext text-[10px] text-slate-400 dark:text-[#737373] mt-1 font-mono">
+            {roiPercent != null ? `Net PnL ÷ Capital Risked` : 'Calculated on risk'}
+          </p>
         </div>
       </div>
 
-      {/* ── OUTCOME ────────────────────────────────────────────────────── */}
+      {/* ── OUTCOME & STATUS ───────────────────────────────────────────── */}
+      <Section label="Outcome & Status" icon={ShieldAlert} />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Fld label="Result" error={errors.result?.message}>
           <div className="relative">
@@ -403,7 +407,7 @@ export function TradeForm({ accounts, tags, existing }: TradeFormProps) {
               <option value="loss">🔴 Loss</option>
               <option value="breakeven">🟡 Breakeven</option>
             </select>
-            <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#3a3a3a]">▾</div>
+            <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#737373]">▾</div>
           </div>
         </Fld>
         <Fld label="Status" error={errors.status?.message}>
@@ -414,7 +418,7 @@ export function TradeForm({ accounts, tags, existing }: TradeFormProps) {
               <option value="closed_sl">✗ Closed S/L</option>
               <option value="closed_manual">≡ Manual Close</option>
             </select>
-            <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#3a3a3a]">▾</div>
+            <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#737373]">▾</div>
           </div>
         </Fld>
         <Fld label="% Risk" badge="auto">
@@ -422,15 +426,9 @@ export function TradeForm({ accounts, tags, existing }: TradeFormProps) {
             <input type="number" step="0.01" {...register('percent_risk')}
               placeholder="auto"
               className={`${inp} font-mono pr-8`}
-              style={{
-                color: Number(watch('percent_risk') ?? 0) > 0 ? '#34d399'
-                     : Number(watch('percent_risk') ?? 0) < 0 ? '#f87171'
-                     : undefined,
-              }}
             />
-            <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-[#333]">%</span>
+            <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 dark:text-[#737373]">%</span>
           </div>
-          <p className="text-[9px] text-[#2e2e2e] mt-1">net PnL ÷ capital risked</p>
         </Fld>
         <Fld label="Timezone">
           <div className="relative">
@@ -441,7 +439,7 @@ export function TradeForm({ accounts, tags, existing }: TradeFormProps) {
               <option value="America/Los_Angeles">Pacific (PT)</option>
               <option value="UTC">UTC</option>
             </select>
-            <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#3a3a3a]">▾</div>
+            <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#737373]">▾</div>
           </div>
         </Fld>
       </div>
@@ -449,26 +447,26 @@ export function TradeForm({ accounts, tags, existing }: TradeFormProps) {
       {/* ── CONFLUENCES ────────────────────────────────────────────────── */}
       <div>
         <div className="flex items-center gap-2 mb-2">
-          <span className="text-[10px] font-bold tracking-[0.1em] uppercase text-[#3a3a3a]">Confluences</span>
+          <span className="text-[10px] font-extrabold tracking-wider uppercase text-slate-600 dark:text-[#737373]">Confluences</span>
           {selectedTags.length > 0 && (
-            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20">
               {selectedTags.length}
             </span>
           )}
           <div className="flex-1 h-px bg-gradient-to-r from-indigo-500/20 to-transparent" />
         </div>
 
-        <div className="bg-[#0d0d0d] border border-[#1e1e1e] rounded-xl p-3 space-y-2.5">
+        <div className="drawer-card bg-white border border-slate-200 dark:bg-[#0d0d0d] dark:border-[#1e1e1e] rounded-2xl p-4 space-y-3 shadow-xs">
           {/* Selected pills */}
           <div className="flex flex-wrap gap-1.5 min-h-[26px]">
             {selectedTags.length === 0 ? (
-              <span className="text-[11px] text-[#2e2e2e] italic">Click tags below to add confluences…</span>
+              <span className="text-xs text-slate-400 dark:text-[#555555] italic">Click tags below to add confluences…</span>
             ) : (
               selectedTags.map((tag) => (
-                <span key={tag} className="tag-pill-selected text-[11px]">
+                <span key={tag} className="tag-pill-selected text-xs font-semibold">
                   {tag}
-                  <button type="button" onClick={() => removeTag(tag)} className="ml-1 opacity-60 hover:opacity-100 transition-opacity">
-                    <X className="w-2.5 h-2.5" />
+                  <button type="button" onClick={() => removeTag(tag)} className="ml-1 opacity-70 hover:opacity-100 transition-opacity">
+                    <X className="w-3 h-3" />
                   </button>
                 </span>
               ))
@@ -477,26 +475,26 @@ export function TradeForm({ accounts, tags, existing }: TradeFormProps) {
 
           {/* Available predefined tags */}
           {tags.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-1.5 pt-1 border-t border-slate-100 dark:border-white/5">
               {tags.filter((t) => !selectedTags.includes(t.label)).map((t) => (
-                <button key={t.id} type="button" onClick={() => addTag(t.label)} className="tag-pill-available text-[11px]">
-                  <Plus className="w-2.5 h-2.5" /> {t.label}
+                <button key={t.id} type="button" onClick={() => addTag(t.label)} className="tag-pill-available text-xs">
+                  <Plus className="w-3 h-3" /> {t.label}
                 </button>
               ))}
             </div>
           )}
 
           {/* Custom tag input */}
-          <div className="flex gap-2 pt-0.5">
+          <div className="flex gap-2 pt-1">
             <input
               value={newTag}
               onChange={(e) => setNewTag(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag(newTag); } }}
               placeholder="Type custom confluence and press Enter…"
-              className={`${inp} flex-1 text-[12px]`}
+              className={`${inp} flex-1 text-xs`}
             />
             <button type="button" onClick={() => addTag(newTag)}
-              className="px-3 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 rounded-lg text-[11px] font-semibold text-indigo-400 transition-all duration-200 whitespace-nowrap">
+              className="px-3.5 bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:border-indigo-500/30 dark:text-indigo-400 dark:hover:bg-indigo-500/20 rounded-xl text-xs font-bold transition-all duration-200 whitespace-nowrap cursor-pointer active:scale-95">
               + Add
             </button>
           </div>
@@ -506,32 +504,30 @@ export function TradeForm({ accounts, tags, existing }: TradeFormProps) {
       {/* ── NOTES + SCREENSHOT ─────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         <Fld label="Notes">
-          <textarea {...register('notes')} placeholder="Trade notes, psychology, observations…" rows={2}
+          <textarea {...register('notes')} placeholder="Trade notes, psychology, observations…" rows={3}
             className={`${inp} resize-none`} />
         </Fld>
         <Fld label="Screenshot URL">
-          <textarea {...register('screenshot_url')} placeholder="https://…" rows={2}
-            className={`${inp} resize-none font-mono text-[12px]`} />
+          <textarea {...register('screenshot_url')} placeholder="https://…" rows={3}
+            className={`${inp} resize-none font-mono text-xs`} />
         </Fld>
       </div>
 
       {/* ── SUBMIT ─────────────────────────────────────────────────────── */}
-      <div className="flex gap-3 pt-1">
+      <div className="flex gap-3 pt-2">
         <button type="button" onClick={() => router.back()}
-          className="flex-1 bg-transparent hover:bg-white/4 border border-[#1e1e1e] rounded-xl py-2.5 text-[13px] font-medium text-[#555] hover:text-[#999] transition-all duration-200">
+          className="flex-1 bg-white border border-slate-200 shadow-xs hover:bg-slate-100 rounded-xl py-3 text-xs font-bold text-slate-700 hover:text-slate-900 dark:bg-transparent dark:border-[#1e1e1e] dark:text-[#a0a0a0] dark:hover:text-white dark:hover:bg-white/[0.06] transition-all duration-200 active:scale-95 cursor-pointer">
           Cancel
         </button>
         <button type="submit" disabled={saving}
-          className="flex-[3] relative overflow-hidden rounded-xl py-2.5 text-[13px] font-bold text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-          style={{
-            background: 'linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #818cf8 100%)',
-            boxShadow: saving ? 'none' : '0 0 24px rgba(99,102,241,0.4), inset 0 1px 0 rgba(255,255,255,0.1)',
-          }}>
-          <span className="relative z-10">
-            {saving ? '⏳ Saving…' : existing ? '✓ Update Trade' : '⚡ Log Trade'}
-          </span>
-          {!saving && (
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/8 to-transparent -translate-x-full hover:translate-x-full transition-transform duration-700" />
+          className="flex-[3] bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-3 px-5 rounded-xl transition-all shadow-sm active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2">
+          {saving ? (
+            <>
+              <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <span>Saving Trade…</span>
+            </>
+          ) : (
+            <span>{existing ? 'Update Trade' : 'Save Trade'}</span>
           )}
         </button>
       </div>

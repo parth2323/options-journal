@@ -1,289 +1,470 @@
 'use client';
 
-import { Trade, Account, TradeResult, TradeStatus } from '@/lib/types';
-import {
-  formatCurrency, formatDateTime, formatTradeDuration,
-  getResultLabel, getStatusLabel, getDirectionLabel,
-  getSessionLabel, getPnlColor, cn,
-} from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
-import { useState, useMemo } from 'react';
-import { ChevronUp, ChevronDown, ChevronsUpDown, ExternalLink, Pencil } from 'lucide-react';
-import { TradeDrawer } from './TradeDrawer';
-import { DuplicateButton } from './DuplicateButton';
+import { useState } from 'react';
 import Link from 'next/link';
+import { Trade, Account, Direction, TradeResult } from '@/lib/types';
+import {
+  formatCurrency,
+  formatDateTime,
+  formatTradeDuration,
+  getDirectionLabel,
+  getStatusLabel,
+  getSessionLabel,
+  cn,
+} from '@/lib/utils';
+import {
+  ArrowUpRight,
+  ArrowDownRight,
+  Pencil,
+  Copy,
+  ChevronUp,
+  ChevronDown,
+  Check,
+  Search,
+  X,
+} from 'lucide-react';
+import { TradeDrawer } from './TradeDrawer';
 
 interface TradesTableProps {
   trades: Trade[];
   accounts: Account[];
 }
 
-type SortField = keyof Trade | '';
-type SortDir = 'asc' | 'desc';
+type SortField = 'opened_at' | 'symbol' | 'gross_pnl' | 'commission' | 'net_pnl' | 'percent_risk' | 'result';
+type SortOrder = 'asc' | 'desc';
 
-function ResultPill({ result }: { result: TradeResult }) {
-  const colors = {
-    win: 'bg-emerald-950/60 text-emerald-400 border-emerald-900/50',
-    loss: 'bg-red-950/60 text-red-400 border-red-900/50',
-    breakeven: 'bg-yellow-950/60 text-yellow-400 border-yellow-900/50',
+/* ── Result badge ────────────────────────────────────────────────── */
+function ResultBadge({ result }: { result: TradeResult }) {
+  const styles: Record<TradeResult, string> = {
+    win: 'badge-win',
+    loss: 'badge-loss',
+    breakeven: 'badge-breakeven',
+  };
+  const labels: Record<TradeResult, string> = { win: 'Win', loss: 'Loss', breakeven: 'B/E' };
+  const icons: Record<TradeResult, React.ReactNode> = {
+    win: <ArrowUpRight className="w-3 h-3" />,
+    loss: <ArrowDownRight className="w-3 h-3" />,
+    breakeven: <span className="text-[10px]">−</span>,
   };
   return (
-    <span className={`pill border ${colors[result]}`}>
-      {result === 'win' ? '🟢' : result === 'loss' ? '🔴' : '🟡'} {getResultLabel(result)}
+    <span
+      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${styles[result]}`}
+    >
+      {icons[result]}
+      {labels[result]}
     </span>
   );
 }
 
-function SortIcon({ field, sortField, sortDir }: { field: string; sortField: string; sortDir: SortDir }) {
-  if (sortField !== field) return <ChevronsUpDown className="w-3 h-3 text-[#3a3a3a]" />;
-  return sortDir === 'asc'
-    ? <ChevronUp className="w-3 h-3 text-indigo-400" />
-    : <ChevronDown className="w-3 h-3 text-indigo-400" />;
+/* ── Direction badge ─────────────────────────────────────────────── */
+function DirectionBadge({ direction }: { direction: Direction | undefined }) {
+  const isBull = direction === 'call_long' || direction === 'put_short';
+  const color = isBull ? 'badge-bull' : 'badge-bear';
+  return (
+    <span className={`inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold border whitespace-nowrap ${color}`}>
+      {getDirectionLabel(direction)}
+    </span>
+  );
+}
+
+/* ── Duplicate Button helper ─────────────────────────────────────── */
+function DuplicateButton({ tradeId, variant = 'icon' }: { tradeId: string; variant?: 'icon' | 'full' }) {
+  const [loading, setLoading] = useState(false);
+  const [copied, setCopied]   = useState(false);
+
+  const handleDuplicate = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (loading) return;
+    setLoading(true);
+
+    try {
+      const res = await fetch(`/api/trades/${tradeId}/duplicate`, { method: 'POST' });
+      if (res.ok) {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+        window.location.reload();
+      }
+    } catch (err) {
+      console.error('Duplicate failed', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (variant === 'full') {
+    return (
+      <button
+        onClick={handleDuplicate}
+        disabled={loading}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/60 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/40 text-xs font-semibold transition-all duration-200 cursor-pointer"
+      >
+        {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+        <span>{loading ? 'Duplicating…' : copied ? 'Duplicated!' : 'Duplicate'}</span>
+      </button>
+    );
+  }
+
+  return (
+    <button
+      onClick={handleDuplicate}
+      disabled={loading}
+      title="Duplicate trade"
+      className="p-1 rounded transition-all text-[#737373] hover:text-indigo-400 hover:bg-[#1a1a28] cursor-pointer"
+    >
+      {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+    </button>
+  );
 }
 
 export function TradesTable({ trades, accounts }: TradesTableProps) {
-  const [sortField, setSortField] = useState<SortField>('opened_at');
-  const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [selectedTrade, setSelectedTrade] = useState<Trade | null>(null);
+  const [searchQuery, setSearchQuery]     = useState<string>('');
+  const [sortField, setSortField]         = useState<SortField>('opened_at');
+  const [sortOrder, setSortOrder]         = useState<SortOrder>('desc');
+  const [filterAccount, setFilterAccount] = useState<string>('all');
+  const [filterResult, setFilterResult]   = useState<string>('all');
 
-  // Filters
-  const [filterAccount, setFilterAccount] = useState('');
-  const [filterResult, setFilterResult] = useState('');
-  const [filterSession, setFilterSession] = useState('');
-  const [filterSymbol, setFilterSymbol] = useState('');
-
-  const accountMap = useMemo(() => new Map(accounts.map((a) => [a.id, a])), [accounts]);
-
-  const filtered = useMemo(() => {
-    return trades.filter((t) => {
-      if (filterAccount && t.account_id !== filterAccount) return false;
-      if (filterResult && t.result !== filterResult) return false;
-      if (filterSession && t.session !== filterSession) return false;
-      if (filterSymbol && !t.symbol.toLowerCase().includes(filterSymbol.toLowerCase())) return false;
-      return true;
-    });
-  }, [trades, filterAccount, filterResult, filterSession, filterSymbol]);
-
-  const sorted = useMemo(() => {
-    if (!sortField) return filtered;
-    return [...filtered].sort((a, b) => {
-      const av = (a as any)[sortField] ?? '';
-      const bv = (b as any)[sortField] ?? '';
-      const dir = sortDir === 'asc' ? 1 : -1;
-      if (typeof av === 'number') return (av - bv) * dir;
-      return String(av).localeCompare(String(bv)) * dir;
-    });
-  }, [filtered, sortField, sortDir]);
+  const accountMap = new Map(accounts.map((a) => [a.id, a]));
 
   const handleSort = (field: SortField) => {
-    if (sortField === field) setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
-    else { setSortField(field); setSortDir('desc'); }
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('desc');
+    }
   };
 
-  // Footer sums
-  const totals = useMemo(() => ({
-    gross: sorted.reduce((s, t) => s + t.gross_pnl, 0),
-    commission: sorted.reduce((s, t) => s + t.commission, 0),
-    net: sorted.reduce((s, t) => s + t.net_pnl, 0),
-  }), [sorted]);
+  /* Filter */
+  const filtered = trades.filter((t) => {
+    if (filterAccount !== 'all' && t.account_id !== filterAccount) return false;
+    if (filterResult !== 'all') {
+      if (filterResult === 'open' && t.status !== 'open') return false;
+      if (filterResult !== 'open' && t.result !== filterResult) return false;
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      const matchSymbol    = t.symbol.toLowerCase().includes(q);
+      const matchContract  = t.contract_label?.toLowerCase().includes(q) ?? false;
+      const matchNotes     = t.notes?.toLowerCase().includes(q) ?? false;
+      const matchTags      = t.confluences?.some(tag => tag.toLowerCase().includes(q)) ?? false;
+      if (!matchSymbol && !matchContract && !matchNotes && !matchTags) return false;
+    }
+    return true;
+  });
+
+  /* Sort */
+  const sorted = [...filtered].sort((a, b) => {
+    let valA: any = a[sortField];
+    let valB: any = b[sortField];
+
+    if (sortField === 'opened_at') {
+      valA = new Date(a.opened_at).getTime();
+      valB = new Date(b.opened_at).getTime();
+    }
+
+    if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+    if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  /* Totals */
+  const totals = sorted.reduce(
+    (acc, t) => ({
+      gross: acc.gross + (t.gross_pnl || 0),
+      commission: acc.commission + (t.commission || 0),
+      net: acc.net + (t.net_pnl || 0),
+    }),
+    { gross: 0, commission: 0, net: 0 }
+  );
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return null;
+    return sortOrder === 'asc' ? (
+      <ChevronUp className="w-3 h-3 text-indigo-400 inline ml-0.5" />
+    ) : (
+      <ChevronDown className="w-3 h-3 text-indigo-400 inline ml-0.5" />
+    );
+  };
+
+  const getPnlColor = (pnl: number) =>
+    pnl > 0 ? 'text-emerald-400' : pnl < 0 ? 'text-red-400' : 'text-amber-400';
 
   const TH = ({ label, field, className = '' }: { label: string; field?: SortField; className?: string }) => (
     <th
-      className={`px-3 py-2.5 text-left text-[10px] font-semibold text-[#4a4a4a] uppercase tracking-wide whitespace-nowrap ${field ? 'cursor-pointer hover:text-[#737373] select-none' : ''} ${className}`}
+      className={`px-3 py-3 text-left text-[11px] font-extrabold uppercase tracking-wider text-[#737373] ${
+        field ? 'cursor-pointer hover:text-white select-none' : ''
+      } ${className}`}
       onClick={() => field && handleSort(field)}
     >
-      <span className="flex items-center gap-1">
-        {label}
-        {field && <SortIcon field={field} sortField={sortField} sortDir={sortDir} />}
-      </span>
+      {label}
+      {field && <SortIcon field={field} />}
     </th>
   );
 
   return (
-    <>
-      {/* Filters */}
-      <div className="flex flex-wrap gap-2 mb-4">
-        <input
-          placeholder="Symbol..."
-          value={filterSymbol}
-          onChange={(e) => setFilterSymbol(e.target.value)}
-          className="text-xs bg-[#202020] border border-[#2a2a2a] rounded-lg px-3 py-1.5 text-[#a0a0a0] placeholder-[#3a3a3a] focus:outline-none focus:border-indigo-600 w-28"
-        />
-        <select
-          value={filterAccount}
-          onChange={(e) => setFilterAccount(e.target.value)}
-          className="text-xs bg-[#202020] border border-[#2a2a2a] rounded-lg px-3 py-1.5 text-[#a0a0a0] focus:outline-none focus:border-indigo-600"
-        >
-          <option value="">All Accounts</option>
-          {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
-        </select>
-        <select
-          value={filterResult}
-          onChange={(e) => setFilterResult(e.target.value)}
-          className="text-xs bg-[#202020] border border-[#2a2a2a] rounded-lg px-3 py-1.5 text-[#a0a0a0] focus:outline-none focus:border-indigo-600"
-        >
-          <option value="">All Results</option>
-          <option value="win">Win</option>
-          <option value="loss">Loss</option>
-          <option value="breakeven">Breakeven</option>
-        </select>
-        <select
-          value={filterSession}
-          onChange={(e) => setFilterSession(e.target.value)}
-          className="text-xs bg-[#202020] border border-[#2a2a2a] rounded-lg px-3 py-1.5 text-[#a0a0a0] focus:outline-none focus:border-indigo-600"
-        >
-          <option value="">All Sessions</option>
-          <option value="new_york">New York</option>
-          <option value="london">London</option>
-          <option value="asia">Asia</option>
-          <option value="sydney">Sydney</option>
-        </select>
-        <span className="ml-auto text-xs text-[#4a4a4a] flex items-center">
-          {sorted.length} trade{sorted.length !== 1 ? 's' : ''}
-        </span>
-      </div>
-
-      {/* Table */}
-      <div className="bg-[#202020] border border-[#2a2a2a] rounded-xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead className="border-b border-[#2a2a2a] bg-[#191919]">
-              <tr>
-                <TH label="Symbol" field="symbol" />
-                <TH label="Account" />
-                <TH label="Open" field="opened_at" />
-                <TH label="Close" field="closed_at" />
-                <TH label="Duration" />
-                <TH label="Qty" field="quantity" />
-                <TH label="Direction" field="direction" />
-                <TH label="Status" field="status" />
-                <TH label="Session" field="session" />
-                <TH label="Gross PnL" field="gross_pnl" />
-                <TH label="Commission" field="commission" />
-                <TH label="Net PnL" field="net_pnl" />
-                <TH label="% Risk" field="percent_risk" />
-                <TH label="Tags" />
-                <TH label="Result" field="result" />
-                <th className="px-3 py-2.5 w-16" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#1f1f1f]">
-              {sorted.length === 0 ? (
-                <tr>
-                  <td colSpan={16} className="px-4 py-12 text-center text-[#3a3a3a]">
-                    No trades found. <Link href="/trades/new" className="text-indigo-400 hover:underline">Add your first trade →</Link>
-                  </td>
-                </tr>
-              ) : (
-                sorted.map((trade) => (
-                  <tr
-                    key={trade.id}
-                    onClick={() => setSelectedTrade(trade)}
-                    className={cn(
-                      'group cursor-pointer transition-colors duration-100 hover:bg-[#252525]',
-                      trade.result === 'win' && 'trade-row-win',
-                      trade.result === 'loss' && 'trade-row-loss',
-                      trade.result === 'breakeven' && 'trade-row-breakeven',
-                    )}
-                  >
-                    <td className="px-3 py-2.5 font-semibold text-[#e8e8e8] whitespace-nowrap">
-                      <div>{trade.symbol}</div>
-                      {trade.contract_label && (
-                        <div className="text-[10px] text-[#4a4a4a]">{trade.contract_label}</div>
-                      )}
-                    </td>
-                    <td className="px-3 py-2.5 text-[#737373] whitespace-nowrap">
-                      {accountMap.get(trade.account_id)?.name ?? '—'}
-                    </td>
-                    <td className="px-3 py-2.5 text-[#737373] whitespace-nowrap">
-                      {formatDateTime(trade.opened_at)}
-                    </td>
-                    <td className="px-3 py-2.5 text-[#737373] whitespace-nowrap">
-                      {trade.closed_at ? formatDateTime(trade.closed_at) : '—'}
-                    </td>
-                    <td className="px-3 py-2.5 text-[#737373] whitespace-nowrap">
-                      {formatTradeDuration(trade.opened_at, trade.closed_at)}
-                    </td>
-                    <td className="px-3 py-2.5 text-[#a0a0a0]">{trade.quantity}</td>
-                    <td className="px-3 py-2.5 text-[#a0a0a0] whitespace-nowrap">
-                      {getDirectionLabel(trade.direction)}
-                    </td>
-                    <td className="px-3 py-2.5 whitespace-nowrap">
-                      <span className="text-[#737373]">{getStatusLabel(trade.status)}</span>
-                    </td>
-                    <td className="px-3 py-2.5 text-[#737373] whitespace-nowrap">
-                      {getSessionLabel(trade.session)}
-                    </td>
-                    <td className={`px-3 py-2.5 font-medium whitespace-nowrap ${getPnlColor(trade.gross_pnl)}`}>
-                      {formatCurrency(trade.gross_pnl, true)}
-                    </td>
-                    <td className="px-3 py-2.5 text-[#737373] whitespace-nowrap">
-                      {trade.commission > 0 ? formatCurrency(-trade.commission) : '—'}
-                    </td>
-                    <td className={`px-3 py-2.5 font-semibold whitespace-nowrap ${getPnlColor(trade.net_pnl)}`}>
-                      {formatCurrency(trade.net_pnl, true)}
-                    </td>
-                    <td className="px-3 py-2.5 text-[#737373]">
-                      {trade.percent_risk != null ? `${trade.percent_risk}%` : '—'}
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <div className="flex flex-wrap gap-1 max-w-[200px]">
-                        {trade.confluences.slice(0, 2).map((tag) => (
-                          <span key={tag} className="tag-pill-available !py-0.5 !px-2 !text-[10px]">
-                            {tag}
-                          </span>
-                        ))}
-                        {trade.confluences.length > 2 && (
-                          <span className="tag-pill-available !py-0.5 !px-2 !text-[10px] opacity-75">
-                            +{trade.confluences.length - 2}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-3 py-2.5 whitespace-nowrap">
-                      <ResultPill result={trade.result} />
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                        <DuplicateButton tradeId={trade.id} variant="icon" />
-                        <Link
-                          href={`/trades/${trade.id}/edit`}
-                          title="Edit trade"
-                          className="p-1.5 rounded-md transition-all opacity-0 group-hover:opacity-100
-                            text-[#3a3a3a] hover:text-indigo-400 hover:bg-indigo-950/30"
-                        >
-                          <Pencil className="w-3 h-3" />
-                        </Link>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-            {/* Footer sums */}
-            {sorted.length > 0 && (
-              <tfoot className="border-t border-[#2a2a2a] bg-[#191919]">
-                <tr>
-                  <td colSpan={9} className="px-3 py-2 text-[10px] text-[#4a4a4a] font-semibold uppercase tracking-wide">
-                    Totals ({sorted.length} trades)
-                  </td>
-                  <td className={`px-3 py-2 text-xs font-semibold ${getPnlColor(totals.gross)}`}>
-                    {formatCurrency(totals.gross, true)}
-                  </td>
-                  <td className="px-3 py-2 text-xs text-red-400">
-                    {totals.commission > 0 ? formatCurrency(-totals.commission) : '—'}
-                  </td>
-                  <td className={`px-3 py-2 text-xs font-bold ${getPnlColor(totals.net)}`}>
-                    {formatCurrency(totals.net, true)}
-                  </td>
-                  <td colSpan={4} />
-                </tr>
-              </tfoot>
+    <div className="space-y-4">
+      {/* Filters & Search Toolbar */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-3.5 rounded-2xl bg-[#0a0a0f] border border-[#1a1a28] shadow-sm">
+        
+        {/* Search Input & Account Filter */}
+        <div className="flex flex-wrap items-center gap-2.5 flex-1">
+          {/* Instant Search Bar */}
+          <div className="relative flex-1 min-w-[220px] max-w-sm">
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#737373]" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search symbol, contract, notes, tags…"
+              className="w-full pl-8 pr-8 py-1.5 text-xs bg-[#141419] border border-[#2a2a2a] text-[#e8e8e8] placeholder-[#555] rounded-xl focus:outline-none focus:border-indigo-500 transition-all"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#737373] hover:text-white"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
             )}
-          </table>
+          </div>
+
+          {/* Account Filter */}
+          <select
+            value={filterAccount}
+            onChange={(e) => setFilterAccount(e.target.value)}
+            aria-label="Filter trades by account"
+            className="bg-[#141419] border border-[#2a2a2a] text-[#e8e8e8] text-xs font-bold rounded-xl px-3 py-1.5 focus:outline-none focus:border-indigo-500 cursor-pointer"
+          >
+            <option value="all">All Accounts</option>
+            {accounts.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Outcome Filter Pills */}
+        <div className="tab-filter-bar flex items-center gap-1">
+          {[
+            { id: 'all', label: 'All' },
+            { id: 'win', label: 'Wins' },
+            { id: 'loss', label: 'Losses' },
+            { id: 'breakeven', label: 'B/E' },
+            { id: 'open', label: 'Open' },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setFilterResult(tab.id)}
+              className={cn(
+                'tab-filter-btn',
+                filterResult === tab.id && 'tab-filter-btn-active'
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="text-xs text-[#737373] font-mono font-bold self-end md:self-auto">
+          <span className="text-[#e8e8e8]">{sorted.length}</span> / <span className="text-[#e8e8e8]">{trades.length}</span>
         </div>
       </div>
 
+      {/* ── Mobile View: Stack Cards ─────────────── */}
+      <div className="md:hidden space-y-3">
+        {sorted.length === 0 ? (
+          <div className="p-8 text-center bg-[#0a0a0f] border border-[#1a1a28] rounded-2xl">
+            <p className="text-sm text-[#737373]">No trades found</p>
+          </div>
+        ) : (
+          sorted.map((trade) => (
+            <div
+              key={trade.id}
+              onClick={() => setSelectedTrade(trade)}
+              className="p-4 bg-[#0a0a0f] border border-[#1a1a28] rounded-2xl space-y-3 cursor-pointer active:scale-[0.98] transition-all shadow-xs relative overflow-hidden"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-black text-base text-[#e8e8e8] font-mono tracking-tight">{trade.symbol}</span>
+                  {trade.contract_label && (
+                    <span className="text-[11px] text-[#737373] font-mono font-semibold">{trade.contract_label}</span>
+                  )}
+                  <DirectionBadge direction={trade.direction} />
+                  <span className="badge-qty inline-flex items-center justify-center min-w-[22px] h-5 px-1.5 rounded-full text-[10px] font-mono font-bold border">
+                    {trade.quantity}
+                  </span>
+                </div>
+                <ResultBadge result={trade.result} />
+              </div>
+
+              <div className="flex items-center justify-between pt-2 border-t border-[#1f1f1f] text-xs font-mono">
+                <div className="flex flex-col">
+                  <span className="text-[11px] text-[#e8e8e8] font-bold">{formatDateTime(trade.opened_at)}</span>
+                  <span className="text-[10px] text-[#737373]">{accountMap.get(trade.account_id)?.name ?? '—'}</span>
+                </div>
+                <div className="text-right">
+                  <span className={`font-black text-base font-mono block ${getPnlColor(trade.net_pnl)}`}>
+                    {formatCurrency(trade.net_pnl, true)}
+                  </span>
+                  {trade.percent_risk != null && (
+                    <span className="text-[10px] text-[#737373] block">{trade.percent_risk >= 0 ? '+' : ''}{trade.percent_risk}% Risk</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* ── Desktop: Glass Table ──────────────── */}
+      <div className="hidden md:block bg-[#0a0a0f] border border-[#1a1a28] rounded-2xl overflow-hidden shadow-sm">
+        <table className="w-full text-xs border-collapse">
+          <thead>
+            <tr className="border-b border-[#2a2a2a] bg-[#191919]/90 backdrop-blur-md">
+              <TH label="Instrument / Side" field="symbol" className="w-[16%]" />
+              <TH label="Date & Time" field="opened_at" className="w-[19%]" />
+              <TH label="Account / Session" className="w-[12%]" />
+              <TH label="Gross PnL" field="gross_pnl" className="w-[11%] text-right" />
+              <TH label="Comm" field="commission" className="w-[9%] text-right" />
+              <TH label="Net PnL" field="net_pnl" className="w-[12%] text-right" />
+              <TH label="% Risk" field="percent_risk" className="w-[7%] text-right" />
+              <TH label="Result" field="result" className="w-[10%] text-center" />
+              <th className="px-3 py-3 w-[4%]" />
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-[#1f1f1f]">
+            {sorted.length === 0 ? (
+              <tr>
+                <td colSpan={9} className="px-4 py-16 text-center">
+                  <p className="text-[#737373] mb-2 text-sm">No matching trades found</p>
+                  <Link href="/trades/new" className="text-indigo-400 hover:underline text-xs font-semibold">
+                    Add new trade →
+                  </Link>
+                </td>
+              </tr>
+            ) : (
+              sorted.map((trade) => (
+                <tr
+                  key={trade.id}
+                  onClick={() => setSelectedTrade(trade)}
+                  className={cn(
+                    'group cursor-pointer transition-all duration-150 hover:bg-[#252525]',
+                    trade.result === 'win' && 'trade-row-win',
+                    trade.result === 'loss' && 'trade-row-loss',
+                    trade.result === 'breakeven' && 'trade-row-breakeven',
+                  )}
+                >
+                  {/* Column 1: Instrument, Side, Contract, Qty */}
+                  <td className="px-3 py-3">
+                    <div className="flex items-center gap-2">
+                      <span className="font-extrabold text-sm text-[#e8e8e8]">{trade.symbol}</span>
+                      <DirectionBadge direction={trade.direction} />
+                      <span className="badge-qty">
+                        {trade.quantity}
+                      </span>
+                    </div>
+                    {trade.contract_label && (
+                      <p className="text-[11px] text-[#737373] font-mono mt-0.5">{trade.contract_label}</p>
+                    )}
+                  </td>
+
+                  {/* Column 2: Date, Time & Duration */}
+                  <td className="px-3 py-3">
+                    <div className="font-mono text-[#e8e8e8] font-bold text-[11px] whitespace-nowrap">
+                      {formatDateTime(trade.opened_at)}
+                    </div>
+                    <div className="text-[10px] text-[#737373] mt-0.5 flex items-center gap-2">
+                      <span>{formatTradeDuration(trade.opened_at, trade.closed_at)}</span>
+                      {trade.status && (
+                        <span className="text-[9px] px-1.5 py-0.5 rounded badge-account font-medium">
+                          {getStatusLabel(trade.status)}
+                        </span>
+                      )}
+                    </div>
+                  </td>
+
+                  {/* Column 3: Account & Session */}
+                  <td className="px-3 py-3">
+                    <div className="font-semibold text-[#e8e8e8]">
+                      {accountMap.get(trade.account_id)?.name ?? '—'}
+                    </div>
+                    <div className="text-[10px] text-[#737373] mt-0.5">
+                      {getSessionLabel(trade.session)}
+                    </div>
+                  </td>
+
+                  {/* Column 4: Gross PnL (Right Aligned) */}
+                  <td className={`px-3 py-3 font-mono font-medium text-right whitespace-nowrap ${getPnlColor(trade.gross_pnl)}`}>
+                    {formatCurrency(trade.gross_pnl, true)}
+                  </td>
+
+                  {/* Column 5: Commission (Right Aligned) */}
+                  <td className="px-3 py-3 font-mono text-right text-red-400 whitespace-nowrap">
+                    {trade.commission > 0 ? formatCurrency(-trade.commission) : '—'}
+                  </td>
+
+                  {/* Column 6: Net PnL (Right Aligned) */}
+                  <td className={`px-3 py-3 font-mono font-extrabold text-sm text-right whitespace-nowrap ${getPnlColor(trade.net_pnl)}`}>
+                    {formatCurrency(trade.net_pnl, true)}
+                  </td>
+
+                  {/* Column 7: % Risk (Right Aligned) */}
+                  <td className="px-3 py-3 font-mono text-[11px] text-right text-[#737373] whitespace-nowrap">
+                    {trade.percent_risk != null ? `${trade.percent_risk >= 0 ? '+' : ''}${trade.percent_risk}%` : '—'}
+                  </td>
+
+                  {/* Column 8: Result (Center Aligned) */}
+                  <td className="px-3 py-3 text-center whitespace-nowrap">
+                    <ResultBadge result={trade.result} />
+                  </td>
+
+                  {/* Column 9: Actions */}
+                  <td className="px-3 py-3 text-right">
+                    <div
+                      className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <DuplicateButton tradeId={trade.id} variant="icon" />
+                      <Link
+                        href={`/trades/${trade.id}/edit`}
+                        title="Edit trade"
+                        className="p-1 rounded transition-all text-[#737373] hover:text-indigo-400 hover:bg-[#1a1a28]"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </Link>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+          {sorted.length > 0 && (
+            <tfoot className="border-t border-[#2a2a2a] bg-[#191919] font-semibold">
+              <tr>
+                <td colSpan={3} className="px-3 py-3 text-[11px] text-[#737373] uppercase tracking-wider font-extrabold">
+                  Totals ({sorted.length} trade{sorted.length !== 1 ? 's' : ''})
+                </td>
+                <td className={`px-3 py-3 text-xs font-mono font-medium text-right ${getPnlColor(totals.gross)}`}>
+                  {formatCurrency(totals.gross, true)}
+                </td>
+                <td className="px-3 py-3 text-xs font-mono text-right text-red-400">
+                  {totals.commission > 0 ? formatCurrency(-totals.commission) : '—'}
+                </td>
+                <td className={`px-3 py-3 text-sm font-extrabold font-mono text-right ${getPnlColor(totals.net)}`}>
+                  {formatCurrency(totals.net, true)}
+                </td>
+                <td colSpan={3} />
+              </tr>
+            </tfoot>
+          )}
+        </table>
+      </div>
+
+      {/* Trade Drawer Detail View */}
       {selectedTrade && (
         <TradeDrawer
           trade={selectedTrade}
@@ -292,6 +473,6 @@ export function TradesTable({ trades, accounts }: TradesTableProps) {
           onClose={() => setSelectedTrade(null)}
         />
       )}
-    </>
+    </div>
   );
 }

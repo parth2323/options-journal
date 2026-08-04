@@ -1,6 +1,8 @@
 import { getTrade, getAccounts, getConfluenceTags } from '@/lib/db';
 import { TradeForm } from '@/components/trades/TradeForm';
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,12 +15,20 @@ export default async function EditTradePage({ params }: { params: Promise<{ id: 
   const tags = await getConfluenceTags();
 
   return (
-    <div className="px-5 py-5 max-w-5xl mx-auto">
-      <div className="mb-4">
-        <h1 className="text-lg font-bold text-[#e8e8e8] tracking-tight">Edit Trade</h1>
-        <p className="text-[12px] text-[#3a3a3a] mt-0.5">{trade.symbol} {trade.contract_label}</p>
+    <div className="px-5 py-5 max-w-5xl mx-auto space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <Link
+            href="/trades"
+            className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-indigo-600 dark:text-[#737373] dark:hover:text-indigo-400 font-semibold mb-1 transition-colors"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" /> Back to Trades
+          </Link>
+          <h1 className="text-xl font-extrabold text-slate-900 dark:text-[#e8e8e8] tracking-tight">Edit Trade</h1>
+          <p className="text-xs text-slate-500 dark:text-[#737373] mt-0.5">{trade.symbol} {trade.contract_label}</p>
+        </div>
       </div>
-      <div className="bg-[#0a0a0f] border border-[#1a1a28] rounded-2xl p-5 shadow-2xl shadow-black/60">
+      <div className="bg-white border border-slate-200/80 shadow-sm dark:bg-[#0a0a0f] dark:border-[#1a1a28] rounded-2xl p-6">
         <TradeForm accounts={accounts} tags={tags} existing={trade} />
       </div>
     </div>
