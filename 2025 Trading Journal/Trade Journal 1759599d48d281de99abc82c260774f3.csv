@@ -1,0 +1,38 @@
+﻿Name,% Risk,Accounts,Backtest?,Breakeven,Close,Commission,Confluence,Gross PnL,Loss,Net PnL,Open,Profit/Loss,Quant.,Quantity,Sessions,Status,Total Time,Type,Type Opt.,Type Opt.Personal,Win
+QQQ,,,,1,,,,,0,$0.00,,🟡 Breakeven,,,,,,,,,0
+New Trade,,,,1,,,,,0,$0.00,,🟡 Breakeven,,,,,,,,,0
+New Trade,,,,1,,,,,0,$0.00,,🟡 Breakeven,,,,,,,,,0
+New Trade,,,,1,,,,,0,$0.00,,🟡 Breakeven,,,,,,,,,0
+New Trade,,,,1,,,,,0,$0.00,,🟡 Breakeven,,,,,,,,,0
+SPY 0103P,2%,Live Trades (https://app.notion.com/p/Live-Trades-1759599d48d281e2a24ae35fb7572913?pvs=21),false,0,01/02/2025 7:51 (MST),$0.00,"Above 10EMA, Above VWAMP",-$348.00,1,-$348.00,01/02/2025 7:48 (MST),🔴 Loss,3,2,New York,Closed by S/L,3 m,Options,Call,Put Long,0
+USA,,,,1,,,,,0,$0.00,12/08/2023,🟡 Breakeven,,,,,,,,,0
+New Trade,,,,1,,,,,0,$0.00,,🟡 Breakeven,,,,,,,,,0
+TSLA,1%,Backtest (https://app.notion.com/p/Backtest-1759599d48d2811fa69ed0352aa62271?pvs=21),true,0,06/25/2024 9:18 (MDT),$7.88,S/R,$1.00,1,-$6.88,06/25/2024 9:15 (MDT),🔴 Loss,5,5,New York,Closed by T/P,3 m,Options,Call,Call Long,0
+INDIA,,,,1,,,,,0,$0.00,12/11/2023,🟡 Breakeven,,,,,,,,,0
+New Trade,,,,1,,,,,0,$0.00,,🟡 Breakeven,,,,,,,,,0
+TSLA,,,,1,,,,,0,$0.00,04/30/2024 0:00 (EDT),🟡 Breakeven,,,,,,,,,0
+USA,,,,1,,,,,0,$0.00,12/07/2023,🟡 Breakeven,,,,,,,,,0
+New Trade,,,,1,,,,,0,$0.00,,🟡 Breakeven,,,,,,,,,0
+USA,,,,1,,,,,0,$0.00,12/06/2023,🟡 Breakeven,,,,,,,,,0
+No Trade,,,,1,11/03/2023,,,,0,$0.00,11/03/2023,🟡 Breakeven,,,,,0 m,,,,0
+USA,,,,1,,,,,0,$0.00,12/04/2023,🟡 Breakeven,,,,,,,,,0
+New Trade,,,,1,,,,,0,$0.00,,🟡 Breakeven,,,,,,,,,0
+New Trade,,,,1,,,,,0,$0.00,,🟡 Breakeven,,,,,,,,,0
+New Trade,,,,1,,,,,0,$0.00,,🟡 Breakeven,,,,,,,,,0
+INDIA,,,,1,,,,,0,$0.00,12/12/2023,🟡 Breakeven,,,,,,,,,0
+USA,,,,1,,,,,0,$0.00,12/05/2023,🟡 Breakeven,,,,,,,,,0
+New Trade,,,,1,,,,,0,$0.00,,🟡 Breakeven,,,,,,,,,0
+SPY 0107C,2%,Live Trades (https://app.notion.com/p/Live-Trades-1759599d48d281e2a24ae35fb7572913?pvs=21),false,0,12/06/2024 11:20 (EST),$2.10,"Above 10EMA, Above VWAMP",$19.00,0,$16.90,12/06/2024 11:13 (EST),🟢 Profit,1,1,New York,Closed by T/P,7 m,Options,Call,Call Long,1
+SPY 0104P,2%,Live Trades (https://app.notion.com/p/Live-Trades-1759599d48d281e2a24ae35fb7572913?pvs=21),false,0,01/03/2025 7:51 (MST),$0.00,"Above 10EMA, Above VWAMP",$14.60,0,$14.60,01/03/2025 7:48 (MST),🟢 Profit,2,2,New York,Closed by T/P,3 m,Options,Call,Put Long,1
+SPY 0108C,2%,Live Trades (https://app.notion.com/p/Live-Trades-1759599d48d281e2a24ae35fb7572913?pvs=21),false,0,01/07/2025 10:17 (EST),$1.67,"Below 10EMA, Below VWAP",-$20.00,1,-$21.67,01/07/2025 10:15 (EST),🔴 Loss,1,1,New York,Closed by S/L,2 m,Options,Call,Call Long,0
+SPY 0108P,2%,Live Trades (https://app.notion.com/p/Live-Trades-1759599d48d281e2a24ae35fb7572913?pvs=21),false,0,01/07/2025 10:19 (EST),$2.29,"Below 10EMA, Below VWAP",-$21.00,1,-$23.29,01/07/2025 10:17 (EST),🔴 Loss,1,1,New York,Closed by S/L,2 m,Options,Call,Put Long,0
+SPY 0108C,2%,Live Trades (https://app.notion.com/p/Live-Trades-1759599d48d281e2a24ae35fb7572913?pvs=21),false,0,01/07/2025 10:26 (EST),$1.86,"Below 10EMA, Below VWAP",$80.00,0,$78.14,01/07/2025 10:19 (EST),🟢 Profit,1,1,New York,Closed by T/P,7 m,Options,Call,Call Long,1
+SPY 0108P,2%,Live Trades (https://app.notion.com/p/Live-Trades-1759599d48d281e2a24ae35fb7572913?pvs=21),false,0,01/07/2025 11:19 (EST),$1.86,"Below 10EMA, Below VWAP",-$12.00,1,-$13.86,01/07/2025 11:15 (EST),🔴 Loss,1,1,New York,Closed by S/L,4 m,Options,Call,Put Long,0
+SPY 0108C,2%,Live Trades (https://app.notion.com/p/Live-Trades-1759599d48d281e2a24ae35fb7572913?pvs=21),false,0,01/07/2025 11:32 (EST),$1.80,"Below 10EMA, Below VWAP",$24.00,0,$22.20,01/07/2025 11:31 (EST),🟢 Profit,1,1,New York,Closed by T/P,1 m,Options,Call,Call Long,1
+SPY 0110P,2%,Live Trades (https://app.notion.com/p/Live-Trades-1759599d48d281e2a24ae35fb7572913?pvs=21),false,0,01/08/2025 10:50 (EST),$2.12,"Below 10EMA, Below VWAP",-$22.00,1,-$24.12,01/08/2025 10:46 (EST),🔴 Loss,1,1,New York,Closed by T/P,4 m,Options,Call,Put Long,0
+SPY 0110P,2%,Live Trades (https://app.notion.com/p/Live-Trades-1759599d48d281e2a24ae35fb7572913?pvs=21),false,0,01/08/2025 11:08 (EST),$1.86,"Above 10EMA, Above VWAMP",$20.00,0,$18.14,01/08/2025 10:55 (EST),🟢 Profit,1,1,New York,Closed by T/P,13 m,Options,Call,Put Long,1
+SPY 0110C,2%,Live Trades (https://app.notion.com/p/Live-Trades-1759599d48d281e2a24ae35fb7572913?pvs=21),false,0,01/08/2025 11:26 (EST),$2.11,"Above 10EMA, Above VWAMP",-$14.00,1,-$16.11,01/08/2025 11:13 (EST),🔴 Loss,1,1,New York,Closed by T/P,13 m,Options,Call,Call Long,0
+SPY 0110P,2%,Live Trades (https://app.notion.com/p/Live-Trades-1759599d48d281e2a24ae35fb7572913?pvs=21),false,0,01/08/2025 11:36 (EST),$2.10,"Above 10EMA, Above VWAMP",-$31.00,1,-$33.10,01/08/2025 11:31 (EST),🔴 Loss,1,1,New York,Closed by T/P,5 m,Options,Call,Put Long,0
+SPY 0110P,2%,Live Trades (https://app.notion.com/p/Live-Trades-1759599d48d281e2a24ae35fb7572913?pvs=21),false,0,01/08/2025 11:55 (EST),$1.85,"Above 10EMA, Above VWAMP",$19.00,0,$17.15,01/08/2025 11:45 (EST),🟢 Profit,1,1,New York,Closed by T/P,10 m,Options,Call,Put Long,1
+SPY 0110P,2%,Live Trades (https://app.notion.com/p/Live-Trades-1759599d48d281e2a24ae35fb7572913?pvs=21),false,0,01/08/2025 13:47 (EST),$1.86,"Above VWAMP, Below 10EMA",$22.00,0,$20.14,01/08/2025 13:45 (EST),🟢 Profit,1,1,New York,Closed by T/P,2 m,Options,Call,Put Long,1
+SPY 0110P,2%,Live Trades (https://app.notion.com/p/Live-Trades-1759599d48d281e2a24ae35fb7572913?pvs=21),false,0,01/10/2025 10:58 (EST),$1.68,"Above VWAMP, Below 10EMA",$32.00,0,$30.32,01/10/2025 10:56 (EST),🟢 Profit,1,1,New York,Closed by T/P,2 m,Options,Call,Put Long,1

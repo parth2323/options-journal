@@ -1,0 +1,393 @@
+@import "tailwindcss";
+
+/* ─── Theme tokens (raw CSS vars, used in arbitrary Tailwind values) ─────── */
+:root {
+  --t-bg:        #0f0f0f;
+  --t-surface:   #191919;
+  --t-card:      #202020;
+  --t-card-h:    #252525;
+  --t-border:    #2a2a2a;
+  --t-border-s:  #222222;
+  --t-muted:     #3a3a3a;
+  --t-subtle:    #4a4a4a;
+  --t-fg-dim:    #737373;
+  --t-fg-muted:  #a0a0a0;
+  --t-fg:        #e8e8e8;
+  --t-divider:   #1f1f1f;
+  --t-input-ph:  #3a3a3a;
+
+  /* new deep-dark form/dashboard tokens */
+  --t-deep:      #0a0a0f;
+  --t-deep2:     #0d0d0d;
+  --t-deep3:     #0d0d14;
+  --t-deep4:     #111111;
+  --t-deep5:     #141414;
+  --t-b1:        #1a1a1a;
+  --t-b2:        #1a1a28;
+  --t-b3:        #1e1e1e;
+  --t-b4:        #1e1e30;
+  --t-b5:        #252525;
+  --t-b6:        #2a2a40;
+  --t-ph1:       #2e2e2e;
+  --t-ph2:       #333333;
+  --t-ph3:       #3a3a3a;
+}
+
+html.light {
+  --t-bg:        #f5f5f7;
+  --t-surface:   #ffffff;
+  --t-card:      #ffffff;
+  --t-card-h:    #f4f4f7;
+  --t-border:    #d1d1d6;
+  --t-border-s:  #e0e0e5;
+  --t-muted:     #8e8e99;
+  --t-subtle:    #6b6b78;
+  --t-fg-dim:    #555562;
+  --t-fg-muted:  #2c2c35;
+  --t-fg:        #111118;
+  --t-divider:   #e5e5ea;
+  --t-input-ph:  #9e9ea8;
+  color-scheme: light;
+
+  /* new deep-dark → light equivalents */
+  --t-deep:  #ffffff;
+  --t-deep2: #f9f9fb;
+  --t-deep3: #f5f5f8;
+  --t-deep4: #f2f2f5;
+  --t-deep5: #eeeef2;
+  --t-b1:    #e8e8ed;
+  --t-b2:    #dde0f0;
+  --t-b3:    #e2e2e8;
+  --t-b4:    #d8daf0;
+  --t-b5:    #d4d4da;
+  --t-b6:    #c8cae8;
+  --t-ph1:   #9e9ea8;
+  --t-ph2:   #aaaaB4;
+  --t-ph3:   #8e8e99;
+}
+
+html.light [class*="bg-[#0f0f0f]"] { background-color: var(--t-bg) !important; }
+html.light [class*="bg-[#191919]"] { background-color: var(--t-surface) !important; }
+html.light [class*="bg-[#1f1f1f]"] { background-color: var(--t-card-h) !important; }
+html.light [class*="bg-[#202020]"] { background-color: var(--t-card) !important; }
+html.light [class*="bg-[#252525]"] { background-color: var(--t-card-h) !important; }
+html.light [class*="bg-[#2a2a2a]"] { background-color: var(--t-border-s) !important; }
+
+html.light [class*="bg-[#0a0a0f]"] { background-color: var(--t-deep) !important; }
+html.light [class*="bg-[#0d0d0d]"] { background-color: var(--t-deep2) !important; }
+html.light [class*="bg-[#0d0d14]"] { background-color: var(--t-deep) !important; }
+html.light [class*="bg-[#101018]"] { background-color: #f0f0f5 !important; }
+html.light [class*="bg-[#111]"]    { background-color: var(--t-deep4) !important; }
+html.light [class*="bg-[#111111]"] { background-color: var(--t-deep4) !important; }
+html.light [class*="bg-[#11111e]"] { background-color: #f8f9fc !important; }
+html.light [class*="bg-[#12121a]"] { background-color: var(--t-deep2) !important; }
+html.light [class*="bg-[#12121e]"] { background-color: var(--t-deep2) !important; }
+html.light [class*="bg-[#12121d]"] { background-color: var(--t-deep2) !important; }
+html.light [class*="bg-[#121220]"] { background-color: #f0f3ff !important; }
+html.light [class*="bg-[#141414]"] { background-color: var(--t-deep5) !important; }
+html.light [class*="bg-[#161616]"] { background-color: var(--t-deep5) !important; }
+html.light [class*="bg-[#161622]"] { background-color: #ffffff !important; }
+html.light [class*="bg-[#171724]"] { background-color: #f8f9fc !important; }
+html.light [class*="bg-[#181826]"] { background-color: #ffffff !important; }
+html.light [class*="bg-[#191926]"] { background-color: #f8f9fc !important; }
+html.light [class*="bg-[#1c1c2b]"] { background-color: #f1f3f9 !important; }
+html.light [class*="bg-[#1a1a1a]"] { background-color: var(--t-b1) !important; }
+html.light [class*="bg-[#202030]"] { background-color: #f3f4f6 !important; }
+html.light [class*="bg-[#222234]"] { background-color: #f3f4f6 !important; }
+
+html.light [class*="border-[#2a2a2a]"] { border-color: var(--t-border) !important; }
+html.light [class*="border-[#1f1f1f]"] { border-color: var(--t-divider) !important; }
+html.light [class*="border-[#333]"]     { border-color: var(--t-border) !important; }
+html.light [class*="border-[#3a3a3a]"] { border-color: var(--t-border) !important; }
+html.light [class*="border-[#1a1a1a]"] { border-color: var(--t-b1) !important; }
+html.light [class*="border-[#1a1a28]"] { border-color: var(--t-b2) !important; }
+html.light [class*="border-[#1e1e1e]"] { border-color: var(--t-b3) !important; }
+html.light [class*="border-[#1e1e2d]"] { border-color: var(--t-b3) !important; }
+html.light [class*="border-[#1e1e30]"] { border-color: var(--t-b4) !important; }
+html.light [class*="border-[#252525]"] { border-color: var(--t-b5) !important; }
+html.light [class*="border-[#2a2a40]"] { border-color: var(--t-b6) !important; }
+html.light [class*="border-[#222]"]    { border-color: var(--t-border-s) !important; }
+
+html.light body {
+  background-color: #f5f5f7 !important;
+  color: #111118 !important;
+}
+
+html.light h1,
+html.light h2,
+html.light h3,
+html.light h4,
+html.light h5,
+html.light h6 {
+  color: #111827 !important;
+}
+
+/* ── Theme text overrides for light mode ─────────────────────────── */
+html.light [class*="text-[#e8e8e8]"] { color: var(--t-fg) !important; }
+html.light [class*="text-[#e0e0e0]"] { color: var(--t-fg) !important; }
+html.light [class*="text-[#a0a0a0]"] { color: #374151 !important; }
+html.light [class*="text-[#737373]"] { color: #4b5563 !important; }
+html.light [class*="text-[#4a4a4a]"] { color: #4b5563 !important; }
+html.light [class*="text-[#3a3a3a]"] { color: #374151 !important; }
+html.light [class*="text-[#333]"]    { color: #111827 !important; }
+html.light [class*="text-[#2e2e2e]"] { color: #4b5563 !important; }
+html.light [class*="text-[#2a2a2a]"] { color: #4b5563 !important; }
+html.light [class*="text-[#555]"]    { color: #4b5563 !important; }
+html.light [class*="text-[#444]"]    { color: #4b5563 !important; }
+
+/* Ensure gray-100 / gray-200 / gray-300 / gray-400 / gray-500 font colors don't wash out in light mode */
+html.light [class*="text-gray-100"],
+html.light [class*="text-gray-200"],
+html.light [class*="text-gray-300"],
+html.light [class*="text-gray-400"] { color: #374151 !important; }
+
+html.light [class*="text-gray-500"],
+html.light [class*="text-gray-600"],
+html.light [class*="text-gray-700"],
+html.light [class*="text-gray-800"],
+html.light [class*="text-gray-900"] { color: #111827 !important; }
+
+html.light [class*="text-slate-100"],
+html.light [class*="text-slate-200"],
+html.light [class*="text-slate-300"],
+html.light [class*="text-slate-400"] { color: #334155 !important; }
+
+html.light [class*="text-slate-500"],
+html.light [class*="text-slate-600"],
+html.light [class*="text-slate-700"],
+html.light [class*="text-slate-800"],
+html.light [class*="text-slate-900"] { color: #0f172a !important; }
+
+/* Dynamic PnL text contrast in light mode */
+html.light [class*="text-emerald-400"] { color: #059669 !important; }
+html.light [class*="text-red-400"]     { color: #dc2626 !important; }
+html.light [class*="text-yellow-400"]  { color: #d97706 !important; }
+html.light [class*="text-amber-400"]   { color: #d97706 !important; }
+
+html.light [class*="placeholder-[#2e2e2e]"] { color: #9ca3af !important; }
+html.light [class*="placeholder-[#333]"]    { color: #9ca3af !important; }
+html.light [class*="placeholder-[#3a3a3a]"] { color: #9ca3af !important; }
+
+/* Universal input / select / textarea / option fix in light mode */
+html.light input,
+html.light select,
+html.light textarea,
+html.light option {
+  background-color: #ffffff !important;
+  border-color: #d1d1d6 !important;
+  color: #111827 !important;
+}
+
+html.light select option {
+  background-color: #ffffff !important;
+  color: #111827 !important;
+}
+
+/* Target exact text classes on form elements */
+html.light input[class*="text-[#e8e8e8]"],
+html.light select[class*="text-[#e8e8e8]"],
+html.light textarea[class*="text-[#e8e8e8]"],
+html.light input[class*="text-[#e0e0e0]"],
+html.light select[class*="text-[#e0e0e0]"],
+html.light textarea[class*="text-[#e0e0e0]"],
+html.light input[class*="font-mono"],
+html.light select[class*="font-mono"],
+html.light textarea[class*="font-mono"] {
+  color: #111827 !important;
+}
+
+html.light input::placeholder,
+html.light select::placeholder,
+html.light textarea::placeholder {
+  color: #9ca3af !important;
+  opacity: 1 !important;
+}
+
+html.light input:focus,
+html.light select:focus,
+html.light textarea:focus {
+  border-color: #6366f1 !important;
+  background-color: #ffffff !important;
+  color: #111827 !important;
+  outline: none;
+}
+
+html.light ::-webkit-scrollbar-thumb { background: #c1c1c8; }
+html.light ::-webkit-scrollbar-thumb:hover { background: #a1a1a8; }
+
+
+@theme {
+  --color-background: #0f0f0f;
+  --color-surface: #191919;
+  --color-card: #202020;
+  --color-card-hover: #252525;
+  --color-border: #2a2a2a;
+  --color-border-subtle: #222222;
+  --color-muted: #3a3a3a;
+  --color-muted-fg: #737373;
+  --color-fg: #e8e8e8;
+  --color-fg-muted: #a0a0a0;
+  --color-fg-subtle: #6b6b6b;
+
+  --color-win: #34d399;
+  --color-win-bg: oklch(0.18 0.04 160);
+  --color-win-border: oklch(0.25 0.05 160);
+
+  --color-loss: #f87171;
+  --color-loss-bg: oklch(0.17 0.04 15);
+  --color-loss-border: oklch(0.24 0.05 15);
+
+  --color-breakeven: #fbbf24;
+  --color-breakeven-bg: oklch(0.18 0.04 80);
+  --color-breakeven-border: oklch(0.25 0.05 80);
+
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+
+  --radius: 0.5rem;
+  --radius-sm: 0.25rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-full: 9999px;
+
+  /* shadcn CSS vars */
+  --background: #0f0f0f;
+  --foreground: #e8e8e8;
+  --card: #202020;
+  --card-foreground: #e8e8e8;
+  --popover: #1a1a1a;
+  --popover-foreground: #e8e8e8;
+  --primary: #6366f1;
+  --primary-foreground: #ffffff;
+  --secondary: #2a2a2a;
+  --secondary-foreground: #e8e8e8;
+  --muted: #1f1f1f;
+  --muted-foreground: #737373;
+  --accent: #252525;
+  --accent-foreground: #e8e8e8;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #2a2a2a;
+  --input: #2a2a2a;
+  --ring: #6366f1;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--t-bg);
+  color: var(--t-fg);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #3a3a3a;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #4a4a4a;
+}
+
+/* Notion-style subtle table rows */
+.trade-row-win {
+  background: var(--color-win-bg);
+  border-left: 2px solid var(--color-win);
+}
+.trade-row-loss {
+  background: var(--color-loss-bg);
+  border-left: 2px solid var(--color-loss);
+}
+.trade-row-breakeven {
+  background: var(--color-breakeven-bg);
+  border-left: 2px solid var(--color-breakeven);
+}
+
+/* Circular progress ring */
+.ring-progress {
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+}
+
+/* Smooth transitions */
+.transition-base {
+  transition: all 0.15s ease;
+}
+
+/* Pill badges */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+/* Confluence Tag Pills */
+.tag-pill-selected {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 500;
+  background-color: rgba(99, 102, 241, 0.15);
+  color: #818cf8;
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  transition: all 0.15s ease;
+}
+
+html.light .tag-pill-selected {
+  background-color: #e0e7ff;
+  color: #3730a3;
+  border-color: #c7d2fe;
+}
+
+.tag-pill-available {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 500;
+  background-color: var(--t-surface);
+  color: var(--t-fg-dim);
+  border: 1px solid var(--t-border);
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.tag-pill-available:hover {
+  border-color: #6366f1;
+  color: #818cf8;
+  background-color: var(--t-card-h);
+}
+
+html.light .tag-pill-available:hover {
+  border-color: #4f46e5;
+  color: #4338ca;
+  background-color: #eef2ff;
+}

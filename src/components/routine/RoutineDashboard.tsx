@@ -1,0 +1,506 @@
+'use client';
+
+import { useState, useEffect, useMemo } from 'react';
+import { RoutineData } from '@/lib/types';
+import {
+  Clock,
+  CheckSquare,
+  Square,
+  AlertOctagon,
+  Flame,
+  Layers,
+  Zap,
+  Edit3,
+  Save,
+  ExternalLink,
+  CheckCircle2,
+  ListTodo,
+} from 'lucide-react';
+import { toast } from 'sonner';
+
+interface RoutineDashboardProps {
+  initialRoutine: RoutineData;
+}
+
+export function RoutineDashboard({ initialRoutine }: RoutineDashboardProps) {
+  const [routine, setRoutine] = useState<RoutineData>(initialRoutine);
+  const [estTime, setEstTime] = useState<string>('');
+  const [currentMinutes, setCurrentMinutes] = useState<number>(0);
+  const [selectedRegime, setSelectedRegime] = useState<string | null>(null);
+  const [checkedSteps, setCheckedSteps] = useState<Record<string, boolean>>({});
+  const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [editedRoutine, setEditedRoutine] = useState<RoutineData>(initialRoutine);
+  const [saving, setSaving] = useState<boolean>(false);
+
+  // Live EST clock update
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      const estStr = now.toLocaleTimeString('en-US', {
+        timeZone: 'America/New_York',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true,
+      });
+      setEstTime(estStr);
+
+      const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/New_York',
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: false,
+      }).formatToParts(now);
+
+      let h = 0, m = 0;
+      parts.forEach((p) => {
+        if (p.type === 'hour') h = parseInt(p.value, 10);
+        if (p.type === 'minute') m = parseInt(p.value, 10);
+      });
+      setCurrentMinutes(h * 60 + m);
+    };
+
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const toggleStep = (stepKey: string) => {
+    setCheckedSteps((prev) => ({ ...prev, [stepKey]: !prev[stepKey] }));
+  };
+
+  const handleSaveEdit = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch('/api/routine', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editedRoutine),
+      });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      setRoutine(data);
+      setIsEditing(false);
+      toast.success('Routine updated & saved to Supabase!');
+    } catch {
+      toast.error('Failed to update routine');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Calculate overall checklist progress
+  const totalItems = useMemo(() => {
+    return routine.phases.reduce((sum, phase) => sum + phase.items.length, 0);
+  }, [routine]);
+
+  const completedItemsCount = useMemo(() => {
+    return Object.values(checkedSteps).filter(Boolean).length;
+  }, [checkedSteps]);
+
+  const progressPercent = totalItems > 0 ? Math.round((completedItemsCount / totalItems) * 100) : 0;
+
+  return (
+    <div className="space-y-6 max-w-full">
+      {/* ── TOP HEADER CONTROLS & LIVE CLOCK ───────────────────────────────── */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white dark:bg-[#12121a] border border-gray-200 dark:border-[#1e1e2d] rounded-2xl p-5 shadow-sm">
+        <div>
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-black uppercase tracking-wider bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-sm">
+              <Zap className="w-3.5 h-3.5" />
+              Disciplined Execution
+            </span>
+            <span className="text-xs text-gray-600 dark:text-[#a0a0a0] font-bold flex items-center gap-1">
+              <Clock className="w-3.5 h-3.5 text-amber-500" />
+              America/New_York (EST)
+            </span>
+          </div>
+          <h1 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white tracking-tight">
+            {routine.title}
+          </h1>
+          <p className="text-sm text-gray-600 dark:text-[#a0a0a0] font-semibold mt-0.5">
+            {routine.subtitle}
+          </p>
+        </div>
+
+        {/* Right side live clock, progress & edit button */}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Daily Routine Progress */}
+          <div className="bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-500/30 rounded-xl px-4 py-2 text-left sm:text-right min-w-[150px]">
+            <div className="flex items-center justify-between sm:justify-end gap-2">
+              <span className="text-[11px] font-extrabold text-indigo-900 dark:text-indigo-300 uppercase tracking-wider">
+                Daily Completion
+              </span>
+              <span className="text-xs font-black text-indigo-700 dark:text-indigo-400">
+                {completedItemsCount}/{totalItems}
+              </span>
+            </div>
+            <div className="w-full bg-indigo-200/60 dark:bg-indigo-950 rounded-full h-2 mt-1 overflow-hidden">
+              <div
+                className="bg-indigo-600 dark:bg-indigo-500 h-full rounded-full transition-all duration-300"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Live EST Clock */}
+          <div className="bg-gray-50 dark:bg-[#191926] border border-gray-200 dark:border-[#2a2a3e] rounded-xl px-4 py-2 text-right">
+            <p className="text-[10px] font-bold text-gray-600 dark:text-[#737373] uppercase tracking-wider">
+              Current EST Time
+            </p>
+            <p className="text-xl font-black font-mono text-amber-600 dark:text-amber-500 leading-tight">
+              {estTime || '10:00:00 AM'}
+            </p>
+          </div>
+
+          <button
+            onClick={() => {
+              setEditedRoutine(routine);
+              setIsEditing(!isEditing);
+            }}
+            className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-[#202030] dark:hover:bg-[#2a2a40] text-gray-900 dark:text-white rounded-xl text-xs font-bold transition-all border border-gray-300 dark:border-[#333348]"
+          >
+            <Edit3 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+            {isEditing ? 'Cancel Edit' : 'Edit Routine'}
+          </button>
+        </div>
+      </div>
+
+      {/* ── EDIT ROUTINE MODAL / DRAWER ────────────────────────────────────── */}
+      {isEditing && (
+        <div className="bg-white dark:bg-[#12121a] border-2 border-indigo-500/50 rounded-2xl p-5 shadow-2xl space-y-4">
+          <div className="flex items-center justify-between border-b border-gray-200 dark:border-[#202030] pb-3">
+            <h3 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <Edit3 className="w-4 h-4 text-indigo-500" /> Edit Routine Configuration & Timings
+            </h3>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setIsEditing(false)}
+                className="px-3.5 py-1.5 bg-gray-200 dark:bg-gray-800 text-xs font-bold rounded-lg text-gray-800 dark:text-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                disabled={saving}
+                className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg flex items-center gap-1.5 disabled:opacity-50"
+              >
+                <Save className="w-3.5 h-3.5" />
+                {saving ? 'Saving…' : 'Save to Supabase'}
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-4 text-xs">
+            <div>
+              <label className="block font-bold text-gray-900 dark:text-gray-300 mb-1">Routine Title</label>
+              <input
+                type="text"
+                value={editedRoutine.title}
+                onChange={(e) => setEditedRoutine({ ...editedRoutine, title: e.target.value })}
+                className="w-full bg-gray-50 dark:bg-[#191924] border border-gray-300 dark:border-[#2a2a3c] rounded-xl px-3 py-2 text-gray-900 dark:text-white font-bold text-sm"
+              />
+            </div>
+            <div>
+              <label className="block font-bold text-gray-900 dark:text-gray-300 mb-1">Subtitle / Time Window</label>
+              <input
+                type="text"
+                value={editedRoutine.subtitle}
+                onChange={(e) => setEditedRoutine({ ...editedRoutine, subtitle: e.target.value })}
+                className="w-full bg-gray-50 dark:bg-[#191924] border border-gray-300 dark:border-[#2a2a3c] rounded-xl px-3 py-2 text-gray-900 dark:text-white text-sm"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MACRO SCRUB QUICK LAUNCHER WIDGETS ────────────────────────────── */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <a
+          href="https://www.forexfactory.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-between p-3.5 bg-white dark:bg-[#12121a] border border-gray-200 dark:border-[#1e1e2d] hover:border-amber-400 dark:hover:border-amber-500 rounded-xl transition-all shadow-xs group"
+        >
+          <div className="flex items-center gap-2.5">
+            <span className="text-base">📅</span>
+            <div>
+              <h4 className="text-xs font-black text-gray-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                ForexFactory.com
+              </h4>
+              <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium">Check Red Folder Events</p>
+            </div>
+          </div>
+          <ExternalLink className="w-4 h-4 text-gray-400 group-hover:text-amber-500 transition-colors" />
+        </a>
+
+        <a
+          href="https://www.tradingview.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-between p-3.5 bg-white dark:bg-[#12121a] border border-gray-200 dark:border-[#1e1e2d] hover:border-indigo-400 dark:hover:border-indigo-500 rounded-xl transition-all shadow-xs group"
+        >
+          <div className="flex items-center gap-2.5">
+            <span className="text-base">📈</span>
+            <div>
+              <h4 className="text-xs font-black text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                TradingView Charts
+              </h4>
+              <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium">DXY, US10Y, USOIL & SPY</p>
+            </div>
+          </div>
+          <ExternalLink className="w-4 h-4 text-gray-400 group-hover:text-indigo-500 transition-colors" />
+        </a>
+
+        <a
+          href="https://www.financialjuice.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-between p-3.5 bg-white dark:bg-[#12121a] border border-gray-200 dark:border-[#1e1e2d] hover:border-purple-400 dark:hover:border-purple-500 rounded-xl transition-all shadow-xs group"
+        >
+          <div className="flex items-center gap-2.5">
+            <span className="text-base">📰</span>
+            <div>
+              <h4 className="text-xs font-black text-gray-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                FinancialJuice Live
+              </h4>
+              <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium">Scan Geopolitical News</p>
+            </div>
+          </div>
+          <ExternalLink className="w-4 h-4 text-gray-400 group-hover:text-purple-500 transition-colors" />
+        </a>
+      </div>
+
+      {/* ── THE SIX OPENING REGIMES CLASSIFICATION MATRIX ──────────────────── */}
+      <div className="bg-white dark:bg-[#12121a] border border-gray-200 dark:border-[#1e1e2d] rounded-2xl p-5 shadow-sm space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-gray-200 dark:border-[#1f1f2e] pb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 rounded-xl text-indigo-600 dark:text-indigo-400">
+              <Layers className="w-4 h-4" />
+            </div>
+            <div>
+              <h2 className="text-base font-black text-gray-900 dark:text-white tracking-tight">
+                The Six Opening Regimes (Classify Every Morning at 8:50 AM)
+              </h2>
+              <p className="text-xs text-gray-600 dark:text-[#737373] font-semibold">
+                Click today's regime to highlight your exact morning bias and strategy.
+              </p>
+            </div>
+          </div>
+          {selectedRegime && (
+            <button
+              onClick={() => setSelectedRegime(null)}
+              className="text-xs text-indigo-600 dark:text-indigo-400 font-bold hover:underline self-start md:self-auto"
+            >
+              Clear Selected Regime
+            </button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+          {routine.regimes.map((r) => {
+            const isSelected = selectedRegime === r.regime;
+            return (
+              <div
+                key={r.id}
+                onClick={() => setSelectedRegime(isSelected ? null : r.regime)}
+                className={`cursor-pointer rounded-xl p-4 border transition-all duration-200 space-y-2 relative overflow-hidden ${
+                  isSelected
+                    ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-950/40 shadow-md ring-2 ring-indigo-600'
+                    : 'border-gray-200 dark:border-[#1e1e2d] bg-gray-50/80 dark:bg-[#161622] hover:border-indigo-400 dark:hover:border-[#2c2c3e]'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-black tracking-tight text-gray-900 dark:text-white">
+                    {r.regime}
+                  </span>
+                  {isSelected && (
+                    <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-indigo-600 text-white shadow-xs">
+                      ACTIVE TODAY
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs font-mono text-indigo-700 dark:text-indigo-300 font-extrabold">
+                  Condition: {r.condition}
+                </p>
+                <p className="text-xs text-gray-900 dark:text-gray-200 font-bold leading-relaxed">
+                  🎯 <strong>Bias / Action:</strong> {r.action}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── PHASE 6 & BLACKOUT WARNING BANNER ─────────────────────────────── */}
+      <div className="bg-red-50 dark:bg-gradient-to-r dark:from-red-500/10 dark:via-red-500/5 dark:to-transparent border-2 border-red-300 dark:border-red-500/40 rounded-2xl p-4.5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-start gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400 flex items-center justify-center flex-shrink-0">
+            <AlertOctagon className="w-6 h-6" />
+          </div>
+          <div className="space-y-0.5">
+            <span className="text-xs font-black uppercase tracking-wider text-red-800 dark:text-red-400 bg-red-100 dark:bg-red-500/20 px-3 py-0.5 rounded-full border border-red-300 dark:border-red-500/30">
+              Phase 6: Blackout & Data Rules
+            </span>
+            <h3 className="text-base font-black text-red-950 dark:text-red-200">
+              9:55 AM Sticky Note Rule: Tier-1 Event @ 10:00 AM → FLAT BY 9:55
+            </h3>
+            <p className="text-xs md:text-sm font-bold text-red-900 dark:text-gray-200">
+              Do not jump into the first violent candle after data. If a Fed speaker is scheduled, be flat 2 minutes before they start.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* ── 8 ROUTINE PHASES TIMELINE GRID (2-COLUMN RESPONSIVE GRID) ──────── */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between border-b border-gray-200 dark:border-[#1e1e2d] pb-2">
+          <h2 className="text-lg font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-2.5">
+            <Clock className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+            Execution Timeline (Phases 1 through 8)
+          </h2>
+          <span className="text-xs text-gray-600 dark:text-[#737373] font-bold">
+            Track & check off completed steps
+          </span>
+        </div>
+
+        {/* 2-Column Responsive Layout for Phases */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          {routine.phases.map((phase) => {
+            const isActive =
+              currentMinutes >= phase.startMinutes && currentMinutes < phase.endMinutes;
+
+            return (
+              <div
+                key={phase.id}
+                className={`rounded-2xl border transition-all duration-300 overflow-hidden flex flex-col justify-between ${
+                  isActive
+                    ? 'border-indigo-600 bg-indigo-50/50 dark:bg-gradient-to-r dark:from-indigo-500/10 dark:via-purple-50/5 dark:to-transparent shadow-md ring-2 ring-indigo-500/40'
+                    : 'border-gray-200 dark:border-[#1e1e2d] bg-white dark:bg-[#12121a]'
+                }`}
+              >
+                <div>
+                  {/* Phase Header */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-4 border-b border-gray-200 dark:border-[#1c1c2b] bg-gray-100/90 dark:bg-[#161622]">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`w-8 h-8 rounded-xl text-xs font-black flex items-center justify-center ${
+                          isActive
+                            ? 'bg-indigo-600 text-white animate-pulse shadow-sm'
+                            : 'bg-gray-200 dark:bg-[#202030] text-gray-900 dark:text-gray-300'
+                        }`}
+                      >
+                        #{phase.phaseNumber}
+                      </div>
+                      <div>
+                        <h3 className="text-base font-black text-gray-900 dark:text-white flex items-center gap-2">
+                          {phase.title}
+                          {isActive && (
+                            <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-800 dark:text-emerald-400 border border-emerald-500/30">
+                              LIVE NOW
+                            </span>
+                          )}
+                        </h3>
+                        <p className="text-xs text-gray-600 dark:text-[#737373] font-mono font-bold">
+                          {phase.timeWindow}
+                        </p>
+                      </div>
+                    </div>
+
+                    {phase.description && (
+                      <span className="text-xs text-amber-950 dark:text-amber-300 font-bold italic bg-amber-50 dark:bg-amber-500/10 px-3 py-1 rounded-lg border border-amber-200 dark:border-amber-500/20">
+                        {phase.description}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Phase Items Checklist */}
+                  <div className="p-4 space-y-3">
+                    {phase.items.map((item, idx) => {
+                      const stepKey = `${phase.id}-step-${idx}`;
+                      const isChecked = !!checkedSteps[stepKey];
+
+                      return (
+                        <div
+                          key={idx}
+                          onClick={() => toggleStep(stepKey)}
+                          className={`flex items-start gap-3.5 p-3 rounded-xl border transition-all cursor-pointer ${
+                            isChecked
+                              ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-300 dark:border-emerald-500/30 line-through opacity-80'
+                              : 'bg-white dark:bg-[#171724] border-gray-200 dark:border-[#222234] hover:border-indigo-400 dark:hover:border-[#2f2f45]'
+                          }`}
+                        >
+                          <div className="mt-0.5 text-gray-500 flex-shrink-0">
+                            {isChecked ? (
+                              <CheckSquare className="w-5 h-5 text-emerald-600 dark:text-emerald-500" />
+                            ) : (
+                              <Square className="w-5 h-5 text-gray-400" />
+                            )}
+                          </div>
+
+                          <div className="flex-1 text-xs sm:text-sm">
+                            <div className="flex flex-wrap items-center gap-2 mb-1">
+                              {item.time && (
+                                <span className="font-mono font-black text-indigo-800 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 px-2.5 py-0.5 rounded-md text-xs">
+                                  {item.time}
+                                </span>
+                              )}
+                              {item.tool && (
+                                <span className="font-extrabold text-amber-900 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-2.5 py-0.5 rounded-md text-xs">
+                                  🛠️ {item.tool}
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-gray-900 dark:text-gray-200 font-bold leading-relaxed">
+                              {item.action}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── THE GOLDEN RULES & RESET COMMITMENT ────────────────────────────── */}
+      <div className="bg-[#f0f3ff] dark:bg-gradient-to-br dark:from-indigo-950/40 dark:via-[#11111e] dark:to-purple-950/40 border-2 border-indigo-200 dark:border-indigo-500/40 rounded-2xl p-6 shadow-sm dark:shadow-xl space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-indigo-200 dark:border-indigo-500/20 pb-3">
+          <div className="flex items-center gap-2.5">
+            <Flame className="w-6 h-6 text-amber-500" />
+            <h2 className="text-lg font-black text-[#1e1b4b] dark:text-white uppercase tracking-wider">
+              The Golden Rules (Read Aloud Every Morning)
+            </h2>
+          </div>
+          <span className="text-xs font-black text-indigo-900 dark:text-indigo-300 bg-indigo-200/70 dark:bg-indigo-500/20 px-3 py-1 rounded-full border border-indigo-300 dark:border-indigo-500/30 self-start sm:self-auto">
+            90 Paper‑Trading Days Commitment
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+          {routine.rules.map((rule) => (
+            <div
+              key={rule.id}
+              className="bg-white dark:bg-[#181826] border border-indigo-200/80 dark:border-indigo-500/20 rounded-xl p-4 space-y-1.5 shadow-xs"
+            >
+              <span className="text-xs font-black text-indigo-700 dark:text-indigo-400 uppercase tracking-widest">
+                Rule #{rule.id}
+              </span>
+              <p className="text-xs sm:text-sm text-gray-900 dark:text-gray-100 font-bold leading-relaxed">
+                {rule.text}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* Commitment Footer Note */}
+        <div className="mt-4 bg-indigo-100/90 dark:bg-indigo-500/10 border border-indigo-300 dark:border-indigo-500/30 rounded-xl p-4 text-xs sm:text-sm text-[#1e1b4b] dark:text-indigo-200 leading-relaxed font-bold">
+          💬 <strong>Daily Reset Commitment:</strong> "{routine.resetCommitment}"
+        </div>
+      </div>
+    </div>
+  );
+}

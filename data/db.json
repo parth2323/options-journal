@@ -1,0 +1,154 @@
+{
+  "accounts": [
+    {
+      "id": "269712d2-a6ac-487e-a66c-3a557177ce7d",
+      "user_id": "local",
+      "name": "Backtest",
+      "account_type": "backtest",
+      "initial_balance": 0,
+      "goal": 50,
+      "created_at": "2026-07-22T19:51:57.163Z"
+    },
+    {
+      "id": "73fe7261-617a-4576-99d7-6a00acff247f",
+      "user_id": "local",
+      "name": "Live Trades",
+      "account_type": "live",
+      "initial_balance": 1000,
+      "goal": 2000,
+      "created_at": "2026-07-22T19:51:57.164Z"
+    },
+    {
+      "id": "4adc6da9-7253-4117-9dd7-e0f10a5b7b29",
+      "user_id": "local",
+      "name": "Funded",
+      "account_type": "live",
+      "initial_balance": 10000,
+      "goal": 50000,
+      "created_at": "2026-07-22T19:51:57.164Z"
+    }
+  ],
+  "trades": [
+    {
+      "user_id": "local",
+      "account_id": "73fe7261-617a-4576-99d7-6a00acff247f",
+      "symbol": "SPY",
+      "contract_label": "SPY 747 P",
+      "instrument_type": "options",
+      "direction": "put_long",
+      "opened_at": "2026-07-22T10:30",
+      "closed_at": "2026-07-22T10:32",
+      "timezone": "America/New_York",
+      "quantity": 2,
+      "entry_price": 2.98,
+      "exit_price": 2.92,
+      "gross_pnl": -35.12,
+      "commission": 3.21,
+      "result": "loss",
+      "status": "closed_sl",
+      "session": "new_york",
+      "confluences": [
+        "Below VWAP",
+        "Below 10EMA"
+      ],
+      "notes": "Was School Run Short. I was right but SL was tight that stopped me out. ",
+      "screenshot_url": "",
+      "id": "b4eaefe9-6049-4a50-a10f-183a093504bc",
+      "net_pnl": -38.33,
+      "created_at": "2026-07-22T20:37:18.413Z",
+      "updated_at": "2026-07-22T20:37:18.416Z"
+    },
+    {
+      "user_id": "local",
+      "account_id": "73fe7261-617a-4576-99d7-6a00acff247f",
+      "symbol": "SPY",
+      "contract_label": "SPY 747 P",
+      "instrument_type": "options",
+      "direction": "put_long",
+      "opened_at": "2026-07-22T10:33",
+      "closed_at": "2026-07-22T10:35",
+      "timezone": "America/New_York",
+      "quantity": 2,
+      "entry_price": 2.9,
+      "exit_price": 3,
+      "gross_pnl": 20,
+      "commission": 1.82,
+      "result": "win",
+      "status": "open",
+      "session": "new_york",
+      "percent_risk": 0,
+      "confluences": [
+        "Below 10EMA",
+        "Below VWAP"
+      ],
+      "notes": "The last trade was stopped out due to tight SL. Traded Put Long again, but this time it went in my favour. But, I was trying to recover the moey so exited at 10 points for 2 conts.",
+      "screenshot_url": "",
+      "id": "cca719a4-c2a6-45c6-ba4e-b3c384d803f9",
+      "net_pnl": 18.18,
+      "created_at": "2026-07-22T21:31:07.577Z",
+      "updated_at": "2026-07-22T21:31:07.579Z"
+    },
+    {
+      "user_id": "local",
+      "account_id": "73fe7261-617a-4576-99d7-6a00acff247f",
+      "symbol": "SPY",
+      "contract_label": "SPY 747 P",
+      "instrument_type": "options",
+      "direction": "put_long",
+      "opened_at": "2026-07-22T09:38",
+      "closed_at": "2026-07-22T09:42",
+      "timezone": "America/New_York",
+      "quantity": 3,
+      "entry_price": 3.04,
+      "exit_price": 3.25,
+      "gross_pnl": 63,
+      "commission": 2.41,
+      "result": "win",
+      "status": "open",
+      "session": "new_york",
+      "percent_risk": 0,
+      "confluences": [
+        "Below 10EMA",
+        "Below VWAP"
+      ],
+      "notes": "This time it felt real bcz on 5-min it was strongly Red, below VWAP and it worked out. Hit PT.",
+      "screenshot_url": "",
+      "id": "74be0854-0095-477c-9cfb-b25077cff58f",
+      "net_pnl": 60.59,
+      "created_at": "2026-07-22T21:34:19.134Z",
+      "updated_at": "2026-07-22T21:34:19.135Z"
+    }
+  ],
+  "confluence_tags": [
+    {
+      "id": "6cc9c2e9-3bbb-43d3-831f-9de249a413d7",
+      "user_id": "local",
+      "label": "Above 10EMA",
+      "color": "indigo"
+    },
+    {
+      "id": "b25e9ca9-6942-42fc-a84a-8a41f0a93f63",
+      "user_id": "local",
+      "label": "Above VWAP",
+      "color": "indigo"
+    },
+    {
+      "id": "9d2f1198-ca03-43a0-9d6b-0bebb0931f9c",
+      "user_id": "local",
+      "label": "S/R",
+      "color": "indigo"
+    },
+    {
+      "id": "f31bf21e-35b4-4ed7-a309-8105083a450d",
+      "user_id": "local",
+      "label": "Below 10EMA",
+      "color": "indigo"
+    },
+    {
+      "id": "c8ada6f9-cf75-4065-91b0-0608e8595608",
+      "user_id": "local",
+      "label": "Below VWAP",
+      "color": "indigo"
+    }
+  ]
+}
