@@ -281,6 +281,8 @@ export function IdeasPage({ initialObservations }: IdeasPageProps) {
 // ── Observation Card (Grid) ───────────────────────────────────────────────────
 
 function ObservationCard({ observation: o, onClick }: { observation: ChartObservation; onClick: () => void }) {
+  const imgs = (o.screenshot_urls ?? []).filter((url) => !url.startsWith('blob:'));
+
   return (
     <div
       onClick={onClick}
@@ -308,13 +310,13 @@ function ObservationCard({ observation: o, onClick }: { observation: ChartObserv
       </div>
 
       {/* Screenshot thumbnail */}
-      {o.screenshot_urls?.length > 0 ? (
+      {imgs.length > 0 ? (
         <div className="rounded-xl overflow-hidden bg-slate-100 dark:bg-[#0f0f18] border border-slate-200/80 dark:border-[#1e1e2d] aspect-video relative">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={o.screenshot_urls[0]} alt="Chart" className="w-full h-full object-cover" />
-          {o.screenshot_urls.length > 1 && (
+          <img src={imgs[0]} alt="Chart" className="w-full h-full object-cover" />
+          {imgs.length > 1 && (
             <span className="absolute bottom-1.5 right-1.5 text-[10px] font-black bg-black/60 text-white px-1.5 py-0.5 rounded-md">
-              +{o.screenshot_urls.length - 1}
+              +{imgs.length - 1}
             </span>
           )}
         </div>
@@ -362,6 +364,8 @@ function ObservationCard({ observation: o, onClick }: { observation: ChartObserv
 // ── Observation List Row ──────────────────────────────────────────────────────
 
 function ObservationListRow({ observation: o, onClick }: { observation: ChartObservation; onClick: () => void }) {
+  const imgs = (o.screenshot_urls ?? []).filter((url) => !url.startsWith('blob:'));
+
   return (
     <div
       onClick={onClick}
@@ -369,9 +373,9 @@ function ObservationListRow({ observation: o, onClick }: { observation: ChartObs
     >
       {/* Thumbnail */}
       <div className="w-14 h-10 rounded-lg overflow-hidden bg-slate-100 dark:bg-[#0f0f18] border border-slate-200 dark:border-[#1e1e2d] flex-shrink-0">
-        {o.screenshot_urls?.[0] ? (
+        {imgs[0] ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={o.screenshot_urls[0]} alt="Chart" className="w-full h-full object-cover" />
+          <img src={imgs[0]} alt="Chart" className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-slate-300 dark:text-slate-700">
             <ImageIcon className="w-4 h-4" />

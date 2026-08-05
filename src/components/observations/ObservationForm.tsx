@@ -34,6 +34,36 @@ function todayLocalISO() {
   return new Date(now.getTime() - offset).toISOString().slice(0, 16);
 }
 
+function compressImageToBase64(file: File, maxWidth = 1200, quality = 0.75): Promise<string> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const src = e.target?.result as string;
+      if (!src) return resolve('');
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return resolve(src);
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = () => resolve(src);
+      img.src = src;
+    };
+    reader.onerror = () => resolve('');
+    reader.readAsDataURL(file);
+  });
+}
+
 export function ObservationForm({ initial, onSave, onCancel, saving }: ObservationFormProps) {
   const [symbol, setSymbol] = useState(initial?.symbol ?? '');
   const [title, setTitle] = useState(initial?.title ?? '');
@@ -48,7 +78,9 @@ export function ObservationForm({ initial, onSave, onCancel, saving }: Observati
   );
   const [tags, setTags] = useState<string[]>(initial?.tags ?? []);
   const [tagInput, setTagInput] = useState('');
-  const [screenshotUrls, setScreenshotUrls] = useState<string[]>(initial?.screenshot_urls ?? []);
+  const [screenshotUrls, setScreenshotUrls] = useState<string[]>(
+    (initial?.screenshot_urls ?? []).filter((url) => !url.startsWith('blob:'))
+  );
   const [uploading, setUploading] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -66,7 +98,7 @@ export function ObservationForm({ initial, onSave, onCancel, saving }: Observati
     setUploading(true);
     const newUrls: string[] = [];
     for (const file of Array.from(files)) {
-      if (file.size > 5 * 1024 * 1024) { toast.error(`${file.name} exceeds 5MB limit`); continue; }
+      if (file.size > 10 * 1024 * 1024) { toast.error(`${file.name} exceeds 10MB limit`); continue; }
       const form = new FormData();
       form.append('file', file);
       form.append('observationId', initial?.id ?? 'tmp');
@@ -76,12 +108,14 @@ export function ObservationForm({ initial, onSave, onCancel, saving }: Observati
           const { url } = await res.json();
           newUrls.push(url);
         } else {
-          // Fallback: create object URL for preview only (won't persist)
-          newUrls.push(URL.createObjectURL(file));
-          toast.warning('Image preview only — Supabase Storage not configured');
+          // Fallback to compressed Base64 data URL (persists in DB, works everywhere)
+          const base64 = await compressImageToBase64(file);
+          if (base64) newUrls.push(base64);
         }
       } catch {
-        toast.error(`Failed to upload ${file.name}`);
+        // Fallback to compressed Base64 data URL
+        const base64 = await compressImageToBase64(file);
+        if (base64) newUrls.push(base64);
       }
     }
     setScreenshotUrls((prev) => [...prev, ...newUrls].slice(0, 4));

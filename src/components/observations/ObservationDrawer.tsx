@@ -75,7 +75,7 @@ export function ObservationDrawer({ observation, onClose, onUpdate, onDelete }: 
     }
   };
 
-  const imgs = observation.screenshot_urls ?? [];
+  const imgs = (observation.screenshot_urls ?? []).filter((url) => !url.startsWith('blob:'));
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-end sm:justify-end" onClick={onClose}>
