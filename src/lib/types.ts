@@ -206,4 +206,25 @@ export interface RoutineData {
   updated_at: string;
 }
 
+// ── Chart Observations / Trade Ideas Journal ──────────────────────────────────
 
+export type ObservationMood = 'confident' | 'uncertain' | 'regret' | 'neutral' | 'excited';
+export type ObservationResult = 'profit' | 'loss' | 'unknown';
+
+export interface ChartObservation {
+  id: string;
+  user_id: string;
+  observed_at: string;            // ISO date string — when you spotted this on the chart
+  symbol: string;                 // e.g. "SPY", "QQQ"
+  timeframe?: string;             // e.g. "5m", "1h", "Daily"
+  title: string;                  // short headline / what you saw
+  body?: string;                  // longer markdown-friendly text
+  screenshot_urls: string[];      // array of Supabase Storage public URLs
+  mood?: ObservationMood;
+  tags: string[];                 // e.g. ["missed setup", "supply zone"]
+  would_have_result?: ObservationResult; // hypothetical outcome
+  created_at: string;
+  updated_at: string;
+}
+
+export type ObservationFormData = Omit<ChartObservation, 'id' | 'user_id' | 'created_at' | 'updated_at'>;

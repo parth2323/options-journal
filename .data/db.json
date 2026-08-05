@@ -347,5 +347,41 @@
       "color": "indigo",
       "created_at": "2026-07-23T17:23:22.868913-04:00"
     }
+  ],
+  "chart_observations": [
+    {
+      "user_id": "local",
+      "symbol": "SPY",
+      "title": "SR Long",
+      "observed_at": "2026-08-04T20:06:00.000Z",
+      "timeframe": "15m",
+      "body": "School run at 10 would have made money as the market was green for 3 days in row. War is cooling in middle east.THere was no chance of SL hit even with tight SL, and big PT.",
+      "screenshot_urls": [
+        "blob:http://localhost:3000/99cad88a-c49d-44fd-b795-d46c9632e2f2"
+      ],
+      "mood": "confident",
+      "tags": [],
+      "would_have_result": "profit",
+      "id": "19f4c5ea-6ad2-499c-ab15-3a5c72ae772f",
+      "created_at": "2026-08-05T04:09:22.389Z",
+      "updated_at": "2026-08-05T04:12:23.951Z"
+    },
+    {
+      "id": "8fce96dc-6787-4e36-898c-ce91d148ac71",
+      "user_id": "local",
+      "observed_at": "2026-08-04T12:13:00-04:00",
+      "symbol": "SPY",
+      "timeframe": "15m",
+      "title": "SPY bouced and SR Long worked out.",
+      "body": "War in middle east is cooloing, and market was green 3-days in row. Even right SL would have turned into profitable trade as it never tumbles between 10-10:30.",
+      "screenshot_urls": [
+        "blob:http://localhost:3000/99d152c7-9f22-4181-bc65-1138a6f906f7"
+      ],
+      "mood": "confident",
+      "tags": [],
+      "would_have_result": "profit",
+      "created_at": "2026-08-05T00:15:16.52-04:00",
+      "updated_at": "2026-08-05T00:15:16.52-04:00"
+    }
   ]
 }

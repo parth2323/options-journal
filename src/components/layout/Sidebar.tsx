@@ -13,6 +13,8 @@ import {
   X,
   Sparkles,
   Clock,
+  Lightbulb,
+  BarChart2,
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -22,6 +24,8 @@ import { ThemeToggle } from '@/components/layout/ThemeToggle';
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/trades', label: 'Trades', icon: TableProperties },
+  { href: '/ideas', label: 'Ideas', icon: Lightbulb },
+  { href: '/market', label: 'Market', icon: BarChart2 },
   { href: '/routine', label: 'Routine', icon: Clock },
   { href: '/coach', label: 'AI Coach', icon: Sparkles },
   { href: '/calendar', label: 'Calendar', icon: CalendarDays },

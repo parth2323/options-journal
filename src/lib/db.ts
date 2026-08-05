@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { createClient } from '@supabase/supabase-js';
-import { Account, Trade, ConfluenceTag, Database, AccountStats, RoutineData } from './types';
+import { Account, Trade, ConfluenceTag, Database, AccountStats, RoutineData, ChartObservation } from './types';
 import { isEvaluatedTrade } from './utils';
 import { supabase } from './supabase';
 import { DEFAULT_ROUTINE_DATA } from './routineData';
@@ -59,6 +59,13 @@ function safeWriteDb(db: Database): void {
   }
 }
 
+// Extend Database type at runtime to include chart_observations
+declare module './types' {
+  interface Database {
+    chart_observations?: ChartObservation[];
+  }
+}
+
 function withTimeout<T>(promiseLike: PromiseLike<T>, ms = 3000): Promise<T> {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error('Timeout')), ms);
@@ -80,6 +87,7 @@ let accountsCache: { data: Account[]; time: number } | null = null;
 let tradesCache: { data: Trade[]; time: number } | null = null;
 let tagsCache: { data: ConfluenceTag[]; time: number } | null = null;
 let routineCache: { data: RoutineData; time: number } | null = null;
+let observationsCache: { data: ChartObservation[]; time: number } | null = null;
 const CACHE_TTL = 3000; // 3 seconds
 
 // ─── Accounts ─────────────────────────────────────────────────────────────────
@@ -529,5 +537,128 @@ export async function updateRoutine(data: RoutineData): Promise<RoutineData> {
   (db as any).routine = updated;
   safeWriteDb(db);
   return updated;
+}
+
+// ─── Chart Observations ───────────────────────────────────────────────────────
+
+export async function getObservations(): Promise<ChartObservation[]> {
+  const now = Date.now();
+  if (observationsCache && now - observationsCache.time < CACHE_TTL) {
+    return observationsCache.data;
+  }
+  try {
+    const res = await withTimeout(
+      supabase.from('chart_observations').select('*').order('observed_at', { ascending: false }),
+      2500
+    );
+    if (!res.error && res.data) {
+      const data = res.data as ChartObservation[];
+      observationsCache = { data, time: now };
+      return data;
+    }
+  } catch {}
+  const db = readDb();
+  return (db as any).chart_observations ?? [];
+}
+
+export async function getObservation(id: string): Promise<ChartObservation | undefined> {
+  const observations = await getObservations();
+  return observations.find((o) => o.id === id);
+}
+
+export async function createObservation(
+  data: Omit<ChartObservation, 'id' | 'created_at' | 'updated_at'>
+): Promise<ChartObservation> {
+  observationsCache = null;
+  const observation: ChartObservation = {
+    ...data,
+    id: crypto.randomUUID(),
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  // Strip undefined and null values — Supabase check constraints reject explicit nulls
+  const supabasePayload = Object.fromEntries(
+    Object.entries(observation).filter(([, v]) => v !== null && v !== undefined)
+  );
+
+  try {
+    const res = await withTimeout(
+      supabase.from('chart_observations').insert(supabasePayload).select().single(),
+      3000
+    );
+    if (!res.error && res.data) {
+      const inserted = res.data as ChartObservation;
+      const db = readDb();
+      if (!(db as any).chart_observations) (db as any).chart_observations = [];
+      (db as any).chart_observations.push(inserted);
+      safeWriteDb(db);
+      return inserted;
+    } else if (res.error) {
+      console.error('[createObservation] Supabase error:', res.error.message, res.error.code, res.error.details);
+    }
+  } catch (err) {
+    console.error('[createObservation] Exception:', err);
+  }
+  const db = readDb();
+  if (!(db as any).chart_observations) (db as any).chart_observations = [];
+  (db as any).chart_observations.push(observation);
+  safeWriteDb(db);
+  return observation;
+}
+
+export async function updateObservation(
+  id: string,
+  data: Partial<ChartObservation>
+): Promise<ChartObservation | null> {
+  observationsCache = null;
+  const payload = { ...data, updated_at: new Date().toISOString() };
+  try {
+    const res = await withTimeout(
+      supabase.from('chart_observations').update(payload).eq('id', id).select().single(),
+      3000
+    );
+    if (!res.error && res.data) {
+      const updated = res.data as ChartObservation;
+      const db = readDb();
+      const arr: ChartObservation[] = (db as any).chart_observations ?? [];
+      const idx = arr.findIndex((o) => o.id === id);
+      if (idx !== -1) arr[idx] = updated;
+      (db as any).chart_observations = arr;
+      safeWriteDb(db);
+      return updated;
+    }
+  } catch {}
+  const db = readDb();
+  const arr: ChartObservation[] = (db as any).chart_observations ?? [];
+  const idx = arr.findIndex((o) => o.id === id);
+  if (idx === -1) return null;
+  arr[idx] = { ...arr[idx], ...payload };
+  (db as any).chart_observations = arr;
+  safeWriteDb(db);
+  return arr[idx];
+}
+
+export async function deleteObservation(id: string): Promise<boolean> {
+  observationsCache = null;
+  try {
+    const res = await withTimeout(
+      supabase.from('chart_observations').delete().eq('id', id),
+      3000
+    );
+    if (!res.error) {
+      const db = readDb();
+      const arr: ChartObservation[] = (db as any).chart_observations ?? [];
+      (db as any).chart_observations = arr.filter((o) => o.id !== id);
+      safeWriteDb(db);
+      return true;
+    }
+  } catch {}
+  const db = readDb();
+  const arr: ChartObservation[] = (db as any).chart_observations ?? [];
+  const before = arr.length;
+  (db as any).chart_observations = arr.filter((o) => o.id !== id);
+  safeWriteDb(db);
+  return (db as any).chart_observations.length < before;
 }
 
