@@ -20,12 +20,11 @@ import {
   AlertTriangle,
   ArrowUpRight,
   ArrowDownRight,
-  Clock,
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
-
 import { toast } from 'sonner';
+import { CoachChatBox } from './CoachChatBox';
 
 interface CoachDashboardProps {
   accounts: Account[];
@@ -36,7 +35,7 @@ function RadialScoreGauge({ score }: { score: number }) {
   const circ = 2 * Math.PI * radius;
   const offset = circ - (score / 100) * circ;
   const color =
-    score >= 80 ? '#34d399' : score >= 65 ? '#6366f1' : score >= 50 ? '#fbbf24' : '#f87171';
+    score >= 80 ? '#10b981' : score >= 65 ? '#6366f1' : score >= 50 ? '#f59e0b' : '#ef4444';
 
   const label =
     score >= 85 ? 'Elite Trader' : score >= 75 ? 'Consistent Edge' : score >= 60 ? 'Disciplined' : score >= 45 ? 'Needs Calibration' : 'High Risk Leak';
@@ -52,7 +51,7 @@ function RadialScoreGauge({ score }: { score: number }) {
             fill="none"
             stroke="currentColor"
             strokeWidth="7"
-            className="text-gray-200 dark:text-[#1a1a24]"
+            className="text-slate-200 dark:text-[#1c1c2b]"
           />
           <circle
             cx="56"
@@ -71,17 +70,17 @@ function RadialScoreGauge({ score }: { score: number }) {
           <span className="text-2xl font-black font-mono tracking-tight" style={{ color }}>
             {score}
           </span>
-          <span className="text-[9px] font-bold text-gray-500 dark:text-[#737373] uppercase tracking-wider">
+          <span className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
             / 100
           </span>
         </div>
       </div>
       <span
-        className="mt-2 text-[11px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full border"
+        className="mt-2 text-[11px] font-black uppercase tracking-wider px-3 py-0.5 rounded-full border shadow-xs"
         style={{
           color,
           backgroundColor: `${color}15`,
-          borderColor: `${color}30`,
+          borderColor: `${color}35`,
         }}
       >
         {label}
@@ -93,28 +92,28 @@ function RadialScoreGauge({ score }: { score: number }) {
 function SubScoreBar({ title, score, explanation }: { title: string; score: number; explanation?: string }) {
   const [showTooltip, setShowTooltip] = useState(false);
   const color =
-    score >= 80 ? '#34d399' : score >= 65 ? '#6366f1' : score >= 50 ? '#fbbf24' : '#f87171';
+    score >= 80 ? '#10b981' : score >= 65 ? '#6366f1' : score >= 50 ? '#f59e0b' : '#ef4444';
 
   return (
     <div
-      className="relative bg-gray-50 dark:bg-[#12121a] border border-gray-200 dark:border-[#1e1e2d] rounded-xl p-2.5 transition-all hover:border-indigo-500/40"
+      className="relative bg-slate-50/90 border border-slate-200/90 dark:bg-[#161622] dark:border-[#222234] rounded-xl p-2.5 transition-all hover:border-indigo-400 dark:hover:border-indigo-500 shadow-xs"
       onMouseEnter={() => setShowTooltip(true)}
       onMouseLeave={() => setShowTooltip(false)}
     >
-      <div className="flex items-center justify-between text-[11px] font-bold mb-1.5">
-        <span className="text-gray-700 dark:text-[#a0a0a0] truncate pr-1">{title}</span>
-        <span className="font-mono" style={{ color }}>
+      <div className="flex items-center justify-between text-[11px] font-extrabold mb-1.5">
+        <span className="text-slate-800 dark:text-slate-200 truncate pr-1">{title}</span>
+        <span className="font-mono font-black text-xs" style={{ color }}>
           {score}
         </span>
       </div>
-      <div className="h-1.5 w-full bg-gray-200 dark:bg-[#1f1f2e] rounded-full overflow-hidden">
+      <div className="h-1.5 w-full bg-slate-200 dark:bg-[#202032] rounded-full overflow-hidden">
         <div
           className="h-full rounded-full transition-all duration-700"
           style={{ width: `${score}%`, backgroundColor: color }}
         />
       </div>
       {showTooltip && explanation && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2 bg-gray-900 text-white dark:bg-black dark:text-gray-200 text-[10px] rounded-lg shadow-xl border border-gray-700 z-50 pointer-events-none leading-relaxed">
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-60 p-2.5 bg-slate-900 text-white dark:bg-black dark:text-slate-200 text-[10px] font-medium rounded-xl shadow-xl border border-slate-700 z-50 pointer-events-none leading-relaxed">
           {explanation}
         </div>
       )}
@@ -175,8 +174,6 @@ export function CoachDashboard({ accounts }: CoachDashboardProps) {
   const timeframeLabels: Record<TimeframeOption, string> = {
     today: "Today's Trades",
     week: "This Week",
-    month: "This Month",
-    ytd: "Year to Date",
     all: "Complete History",
   };
 
@@ -233,7 +230,7 @@ export function CoachDashboard({ accounts }: CoachDashboardProps) {
 
       {/* ── Timeframe Selector Bar ───────────────────────────────────────────── */}
       <div className="flex flex-wrap gap-2 p-1.5 bg-gray-100 dark:bg-[#151520] border border-gray-200 dark:border-[#202030] rounded-xl">
-        {(['today', 'week', 'month', 'ytd', 'all'] as TimeframeOption[]).map((tf) => {
+        {(['today', 'week', 'all'] as TimeframeOption[]).map((tf) => {
           const isSelected = timeframe === tf;
           return (
             <button
@@ -302,7 +299,7 @@ export function CoachDashboard({ accounts }: CoachDashboardProps) {
           {/* ── HERO BANNER: Overall Score + Mentor Headline ─────────────────── */}
           <div className="relative overflow-hidden bg-gradient-to-br from-indigo-900/30 via-gray-900 to-purple-950/40 dark:from-[#0d0d18] dark:via-[#11111d] dark:to-[#181126] border border-indigo-500/30 rounded-2xl p-6 shadow-2xl">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-              
+
               {/* Score Ring Gauge */}
               <div className="lg:col-span-3 flex flex-col items-center justify-center border-b lg:border-b-0 lg:border-r border-indigo-500/20 pb-6 lg:pb-0 lg:pr-6">
                 <RadialScoreGauge score={report.scores.overall} />
@@ -483,7 +480,7 @@ export function CoachDashboard({ accounts }: CoachDashboardProps) {
           {/* ── TAB CONTENT: OVERVIEW ────────────────────────────────────────── */}
           {activeTab === 'overview' && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              
+
               {/* Positive Behaviors Column */}
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-emerald-500 font-extrabold text-xs uppercase tracking-wider">
@@ -678,6 +675,11 @@ export function CoachDashboard({ accounts }: CoachDashboardProps) {
 
         </div>
       ) : null}
+
+      {/* ── INTERACTIVE AI COACH CHATBOX ─────────────────────────────────────── */}
+      <div className="pt-4">
+        <CoachChatBox />
+      </div>
     </div>
   );
 }

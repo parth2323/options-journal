@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { getAuthenticatedUserId } from '@/lib/auth';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
 
 const BUCKET = 'observation-screenshots';
 
 export async function POST(req: NextRequest) {
+  const userId = await getAuthenticatedUserId();
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
   try {
     const form = await req.formData();
     const file = form.get('file') as File | null;
@@ -16,11 +20,13 @@ export async function POST(req: NextRequest) {
     }
 
     const ext = file.name.split('.').pop() ?? 'jpg';
-    const filename = `${observationId ?? 'tmp'}/${crypto.randomUUID()}.${ext}`;
+    // Storage filename scoped under user_id folder for RLS policy
+    const filename = `${userId}/${observationId ?? 'tmp'}-${crypto.randomUUID()}.${ext}`;
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = new Uint8Array(arrayBuffer);
 
+    const supabase = await createSupabaseServerClient();
     const { error } = await supabase.storage
       .from(BUCKET)
       .upload(filename, buffer, {
@@ -29,7 +35,6 @@ export async function POST(req: NextRequest) {
       });
 
     if (error) {
-      // Fallback: if storage not configured, return a placeholder
       console.error('Supabase storage upload error:', error.message);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }

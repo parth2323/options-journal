@@ -1,7 +1,13 @@
 import { NextResponse } from 'next/server';
 import { getTrades, getAccounts } from '@/lib/db';
+import { getAuthenticatedUserId } from '@/lib/auth';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
+  const userId = await getAuthenticatedUserId();
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
   const trades = await getTrades();
   const accounts = await getAccounts();
   const accountMap = new Map(accounts.map((a) => [a.id, a.name]));

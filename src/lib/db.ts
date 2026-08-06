@@ -1,70 +1,8 @@
-import fs from 'fs';
-import path from 'path';
-import { createClient } from '@supabase/supabase-js';
-import { Account, Trade, ConfluenceTag, Database, AccountStats, RoutineData, ChartObservation } from './types';
+import { Account, Trade, ConfluenceTag, AccountStats, RoutineData, ChartObservation } from './types';
 import { isEvaluatedTrade } from './utils';
-import { supabase } from './supabase';
+import { createSupabaseServerClient } from './supabase/server';
 import { DEFAULT_ROUTINE_DATA } from './routineData';
-
-const DB_PATH = path.join(process.cwd(), '.data', 'db.json');
-
-const DEFAULT_DB: Database = {
-  accounts: [],
-  trades: [],
-  confluence_tags: [],
-  routine: DEFAULT_ROUTINE_DATA,
-};
-
-let cachedDb: Database | null = null;
-let lastMtime: number = 0;
-
-export function readDb(): Database {
-  try {
-    if (!fs.existsSync(DB_PATH)) {
-      return DEFAULT_DB;
-    }
-    const stat = fs.statSync(DB_PATH);
-    if (cachedDb && stat.mtimeMs === lastMtime) {
-      return cachedDb;
-    }
-    const raw = fs.readFileSync(DB_PATH, 'utf-8');
-    cachedDb = JSON.parse(raw) as Database;
-    lastMtime = stat.mtimeMs;
-    return cachedDb;
-  } catch {
-    return DEFAULT_DB;
-  }
-}
-
-export function writeDb(db: Database): void {
-  cachedDb = db;
-  const dir = path.dirname(DB_PATH);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-  fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2), 'utf-8');
-  try {
-    lastMtime = fs.statSync(DB_PATH).mtimeMs;
-  } catch {
-    lastMtime = Date.now();
-  }
-}
-
-// Silent wrapper — Vercel's filesystem is read-only; don't let local cache writes crash API routes
-function safeWriteDb(db: Database): void {
-  try {
-    writeDb(db);
-  } catch {
-    // Ignore write failures (e.g. read-only filesystem on Vercel)
-  }
-}
-
-// Extend Database type at runtime to include chart_observations
-declare module './types' {
-  interface Database {
-    chart_observations?: ChartObservation[];
-  }
-}
+import { SupabaseClient } from '@supabase/supabase-js';
 
 function withTimeout<T>(promiseLike: PromiseLike<T>, ms = 3000): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -82,160 +20,128 @@ function withTimeout<T>(promiseLike: PromiseLike<T>, ms = 3000): Promise<T> {
   });
 }
 
-// Simple short-lived in-memory cache to prevent duplicate Supabase fetches in the same request
-let accountsCache: { data: Account[]; time: number } | null = null;
-let tradesCache: { data: Trade[]; time: number } | null = null;
-let tagsCache: { data: ConfluenceTag[]; time: number } | null = null;
-let routineCache: { data: RoutineData; time: number } | null = null;
-let observationsCache: { data: ChartObservation[]; time: number } | null = null;
-const CACHE_TTL = 3000; // 3 seconds
+async function getClient(customClient?: SupabaseClient): Promise<SupabaseClient> {
+  if (customClient) return customClient;
+  return await createSupabaseServerClient();
+}
 
 // ─── Accounts ─────────────────────────────────────────────────────────────────
 
-export async function getAccounts(): Promise<Account[]> {
-  const now = Date.now();
-  if (accountsCache && now - accountsCache.time < CACHE_TTL) {
-    return accountsCache.data;
-  }
+export async function getAccounts(client?: SupabaseClient): Promise<Account[]> {
   try {
-    const res = await withTimeout(supabase.from('accounts').select('*').order('created_at', { ascending: true }), 2500);
+    const sb = await getClient(client);
+    const res = await withTimeout(sb.from('accounts').select('*').order('created_at', { ascending: true }), 3000);
     if (!res.error && res.data) {
-      const data = res.data as Account[];
-      accountsCache = { data, time: now };
-      return data;
+      return res.data as Account[];
     }
-  } catch {}
-  return readDb().accounts;
+  } catch (err) {
+    console.error('[getAccounts] Error:', err);
+  }
+  return [];
 }
 
-export async function getAccount(id: string): Promise<Account | undefined> {
-  const accounts = await getAccounts();
+export async function getAccount(id: string, client?: SupabaseClient): Promise<Account | undefined> {
+  const accounts = await getAccounts(client);
   return accounts.find((a) => a.id === id);
 }
 
-export async function createAccount(data: Omit<Account, 'id' | 'created_at'>): Promise<Account> {
-  accountsCache = null;
+export async function createAccount(
+  data: Omit<Account, 'id' | 'created_at'>,
+  client?: SupabaseClient
+): Promise<Account> {
+  const sb = await getClient(client);
+  const { data: { user } } = await sb.auth.getUser();
+  const userId = user?.id ?? data.user_id ?? 'local';
+
   const account: Account = {
     ...data,
+    user_id: userId,
     id: crypto.randomUUID(),
     created_at: new Date().toISOString(),
   };
-  try {
-    const res = await withTimeout(supabase.from('accounts').insert(account).select().single(), 3000);
-    if (!res.error && res.data) {
-      const inserted = res.data as Account;
-      const db = readDb();
-      db.accounts.push(inserted);
-      safeWriteDb(db);
-      return inserted;
-    }
-  } catch {}
-  const db = readDb();
-  db.accounts.push(account);
-  safeWriteDb(db);
-  return account;
+
+  const res = await withTimeout(sb.from('accounts').insert(account).select().single(), 3000);
+  if (res.error) {
+    console.error('[createAccount] Supabase error:', res.error);
+    throw new Error(res.error.message);
+  }
+  return res.data as Account;
 }
 
-export async function updateAccount(id: string, data: Partial<Account>): Promise<Account | null> {
-  accountsCache = null;
-  try {
-    const res = await withTimeout(supabase.from('accounts').update(data).eq('id', id).select().single(), 3000);
-    if (!res.error && res.data) {
-      const updated = res.data as Account;
-      const db = readDb();
-      const idx = db.accounts.findIndex((a) => a.id === id);
-      if (idx !== -1) db.accounts[idx] = updated;
-      safeWriteDb(db);
-      return updated;
-    }
-  } catch {}
-  const db = readDb();
-  const idx = db.accounts.findIndex((a) => a.id === id);
-  if (idx === -1) return null;
-  db.accounts[idx] = { ...db.accounts[idx], ...data };
-  safeWriteDb(db);
-  return db.accounts[idx];
+export async function updateAccount(
+  id: string,
+  data: Partial<Account>,
+  client?: SupabaseClient
+): Promise<Account | null> {
+  const sb = await getClient(client);
+  const res = await withTimeout(sb.from('accounts').update(data).eq('id', id).select().single(), 3000);
+  if (res.error) {
+    console.error('[updateAccount] Supabase error:', res.error);
+    return null;
+  }
+  return res.data as Account;
 }
 
-export async function deleteAccount(id: string): Promise<boolean> {
-  accountsCache = null;
-  tradesCache = null;
-  try {
-    const res = await withTimeout(supabase.from('accounts').delete().eq('id', id), 3000);
-    if (!res.error) {
-      const db = readDb();
-      db.accounts = db.accounts.filter((a) => a.id !== id);
-      db.trades = db.trades.filter((t) => t.account_id !== id);
-      safeWriteDb(db);
-      return true;
-    }
-  } catch {}
-  const db = readDb();
-  const before = db.accounts.length;
-  db.accounts = db.accounts.filter((a) => a.id !== id);
-  db.trades = db.trades.filter((t) => t.account_id !== id);
-  safeWriteDb(db);
-  return db.accounts.length < before;
+export async function deleteAccount(id: string, client?: SupabaseClient): Promise<boolean> {
+  const sb = await getClient(client);
+  const res = await withTimeout(sb.from('accounts').delete().eq('id', id), 3000);
+  return !res.error;
 }
 
 // ─── Trades ───────────────────────────────────────────────────────────────────
 
-export async function getTrades(accountId?: string): Promise<Trade[]> {
-  const now = Date.now();
-  let allTrades: Trade[] = [];
-
-  if (tradesCache && now - tradesCache.time < CACHE_TTL) {
-    allTrades = tradesCache.data;
-  } else {
-    try {
-      const res = await withTimeout(supabase.from('trades').select('*').order('opened_at', { ascending: false }), 2500);
-      if (!res.error && res.data) {
-        allTrades = res.data as Trade[];
-        tradesCache = { data: allTrades, time: now };
-      } else {
-        allTrades = readDb().trades;
-      }
-    } catch {
-      allTrades = readDb().trades;
+export async function getTrades(accountId?: string, client?: SupabaseClient): Promise<Trade[]> {
+  try {
+    const sb = await getClient(client);
+    let query = sb.from('trades').select('*').order('opened_at', { ascending: false });
+    if (accountId) {
+      query = query.eq('account_id', accountId);
     }
+    const res = await withTimeout(query, 3000);
+    if (!res.error && res.data) {
+      return res.data as Trade[];
+    }
+  } catch (err) {
+    console.error('[getTrades] Error:', err);
   }
-
-  if (accountId) return allTrades.filter((t) => t.account_id === accountId);
-  return allTrades;
+  return [];
 }
 
-export async function getTrade(id: string): Promise<Trade | undefined> {
-  const trades = await getTrades();
-  return trades.find((t) => t.id === id);
+export async function getTrade(id: string, client?: SupabaseClient): Promise<Trade | undefined> {
+  const sb = await getClient(client);
+  const res = await withTimeout(sb.from('trades').select('*').eq('id', id).single(), 3000);
+  if (!res.error && res.data) return res.data as Trade;
+  return undefined;
 }
 
-export async function createTrade(data: Omit<Trade, 'id' | 'net_pnl' | 'created_at' | 'updated_at'>): Promise<Trade> {
-  tradesCache = null;
+export async function createTrade(
+  data: Omit<Trade, 'id' | 'net_pnl' | 'created_at' | 'updated_at'>,
+  client?: SupabaseClient
+): Promise<Trade> {
+  const sb = await getClient(client);
+  const { data: { user } } = await sb.auth.getUser();
+  const userId = user?.id ?? data.user_id ?? 'local';
+
   const trade: Trade = {
     ...data,
+    user_id: userId,
     id: crypto.randomUUID(),
     net_pnl: data.gross_pnl - data.commission,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
-  try {
-    const res = await withTimeout(supabase.from('trades').insert(trade).select().single(), 3000);
-    if (!res.error && res.data) {
-      const inserted = res.data as Trade;
-      const db = readDb();
-      db.trades.push(inserted);
-      safeWriteDb(db);
-      return inserted;
-    }
-  } catch {}
-  const db = readDb();
-  db.trades.push(trade);
-  safeWriteDb(db);
-  return trade;
+
+  const res = await withTimeout(sb.from('trades').insert(trade).select().single(), 3000);
+  if (res.error) {
+    console.error('[createTrade] Supabase error:', res.error);
+    throw new Error(res.error.message);
+  }
+  return res.data as Trade;
 }
 
-export async function duplicateTrade(id: string): Promise<Trade | null> {
-  const original = await getTrade(id);
+export async function duplicateTrade(id: string, client?: SupabaseClient): Promise<Trade | null> {
+  const sb = await getClient(client);
+  const original = await getTrade(id, sb);
   if (!original) return null;
 
   const now = new Date().toISOString();
@@ -244,157 +150,96 @@ export async function duplicateTrade(id: string): Promise<Trade | null> {
   const copy: Trade = {
     ...rest,
     id: crypto.randomUUID(),
-    // Mark status open so user knows they need to review it
     status: 'open',
-    // Clear closed_at — it's a fresh copy
     closed_at: undefined,
     created_at: now,
     updated_at: now,
   };
 
-  tradesCache = null;
-  try {
-    const res = await withTimeout(supabase.from('trades').insert(copy).select().single(), 3000);
-    if (!res.error && res.data) {
-      const inserted = res.data as Trade;
-      const db = readDb();
-      db.trades.push(inserted);
-      safeWriteDb(db);
-      return inserted;
-    }
-  } catch {}
-  const db = readDb();
-  db.trades.push(copy);
-  safeWriteDb(db);
-  return copy;
+  const res = await withTimeout(sb.from('trades').insert(copy).select().single(), 3000);
+  if (res.error) return null;
+  return res.data as Trade;
 }
 
-
-export async function updateTrade(id: string, data: Partial<Trade>): Promise<Trade | null> {
-  tradesCache = null;
+export async function updateTrade(
+  id: string,
+  data: Partial<Trade>,
+  client?: SupabaseClient
+): Promise<Trade | null> {
+  const sb = await getClient(client);
   const payload: Partial<Trade> = {
     ...data,
     updated_at: new Date().toISOString(),
   };
   if (payload.gross_pnl !== undefined || payload.commission !== undefined) {
-    const current = await getTrade(id);
+    const current = await getTrade(id, sb);
     if (current) {
       const gross = payload.gross_pnl !== undefined ? Number(payload.gross_pnl) : current.gross_pnl;
       const comm = payload.commission !== undefined ? Number(payload.commission) : current.commission;
       payload.net_pnl = gross - comm;
     }
   }
-  try {
-    const res = await withTimeout(supabase.from('trades').update(payload).eq('id', id).select().single(), 3000);
-    if (!res.error && res.data) {
-      const updated = res.data as Trade;
-      const db = readDb();
-      const idx = db.trades.findIndex((t) => t.id === id);
-      if (idx !== -1) db.trades[idx] = updated;
-      safeWriteDb(db);
-      return updated;
-    }
-  } catch {}
-  const db = readDb();
-  const idx = db.trades.findIndex((t) => t.id === id);
-  if (idx === -1) return null;
-  db.trades[idx] = { ...db.trades[idx], ...payload };
-  safeWriteDb(db);
-  return db.trades[idx];
+
+  const res = await withTimeout(sb.from('trades').update(payload).eq('id', id).select().single(), 3000);
+  if (res.error) return null;
+  return res.data as Trade;
 }
 
-export async function deleteTrade(id: string): Promise<boolean> {
-  tradesCache = null;
-  try {
-    const res = await withTimeout(supabase.from('trades').delete().eq('id', id), 3000);
-    if (!res.error) {
-      const db = readDb();
-      db.trades = db.trades.filter((t) => t.id !== id);
-      safeWriteDb(db);
-      return true;
-    }
-  } catch {}
-  const db = readDb();
-  const before = db.trades.length;
-  db.trades = db.trades.filter((t) => t.id !== id);
-  safeWriteDb(db);
-  return db.trades.length < before;
+export async function deleteTrade(id: string, client?: SupabaseClient): Promise<boolean> {
+  const sb = await getClient(client);
+  const res = await withTimeout(sb.from('trades').delete().eq('id', id), 3000);
+  return !res.error;
 }
 
 // ─── Confluence Tags ──────────────────────────────────────────────────────────
 
-export async function getConfluenceTags(): Promise<ConfluenceTag[]> {
-  const now = Date.now();
-  if (tagsCache && now - tagsCache.time < CACHE_TTL) {
-    return tagsCache.data;
+export async function getConfluenceTags(client?: SupabaseClient): Promise<ConfluenceTag[]> {
+  try {
+    const sb = await getClient(client);
+    const res = await withTimeout(sb.from('confluence_tags').select('*').order('created_at', { ascending: true }), 3000);
+    if (!res.error && res.data) {
+      return res.data as ConfluenceTag[];
+    }
+  } catch (err) {
+    console.error('[getConfluenceTags] Error:', err);
   }
-  try {
-    const res = await withTimeout(supabase.from('confluence_tags').select('*').order('created_at', { ascending: true }), 2500);
-    if (!res.error && res.data) {
-      const data = res.data as ConfluenceTag[];
-      tagsCache = { data, time: now };
-      return data;
-    }
-  } catch {}
-  return readDb().confluence_tags;
+  return [];
 }
 
-export async function createConfluenceTag(data: Omit<ConfluenceTag, 'id'>): Promise<ConfluenceTag> {
-  tagsCache = null;
-  const tag: ConfluenceTag = { ...data, id: crypto.randomUUID() };
-  try {
-    const res = await withTimeout(supabase.from('confluence_tags').insert(tag).select().single(), 3000);
-    if (!res.error && res.data) {
-      const inserted = res.data as ConfluenceTag;
-      const db = readDb();
-      db.confluence_tags.push(inserted);
-      safeWriteDb(db);
-      return inserted;
-    }
-  } catch {}
-  const db = readDb();
-  db.confluence_tags.push(tag);
-  safeWriteDb(db);
-  return tag;
+export async function createConfluenceTag(
+  data: Omit<ConfluenceTag, 'id'>,
+  client?: SupabaseClient
+): Promise<ConfluenceTag> {
+  const sb = await getClient(client);
+  const { data: { user } } = await sb.auth.getUser();
+  const userId = user?.id ?? data.user_id ?? 'local';
+
+  const tag: ConfluenceTag = {
+    ...data,
+    user_id: userId,
+    id: crypto.randomUUID(),
+  };
+
+  const res = await withTimeout(sb.from('confluence_tags').insert(tag).select().single(), 3000);
+  if (res.error) throw new Error(res.error.message);
+  return res.data as ConfluenceTag;
 }
 
-export async function updateConfluenceTag(id: string, data: Partial<ConfluenceTag>): Promise<ConfluenceTag | null> {
-  tagsCache = null;
-  try {
-    const res = await withTimeout(supabase.from('confluence_tags').update(data).eq('id', id).select().single(), 3000);
-    if (!res.error && res.data) {
-      const updated = res.data as ConfluenceTag;
-      const db = readDb();
-      const idx = db.confluence_tags.findIndex((t) => t.id === id);
-      if (idx !== -1) db.confluence_tags[idx] = updated;
-      safeWriteDb(db);
-      return updated;
-    }
-  } catch {}
-  const db = readDb();
-  const idx = db.confluence_tags.findIndex((t) => t.id === id);
-  if (idx === -1) return null;
-  db.confluence_tags[idx] = { ...db.confluence_tags[idx], ...data };
-  safeWriteDb(db);
-  return db.confluence_tags[idx];
+export async function updateConfluenceTag(
+  id: string,
+  data: Partial<ConfluenceTag>,
+  client?: SupabaseClient
+): Promise<ConfluenceTag | null> {
+  const sb = await getClient(client);
+  const res = await withTimeout(sb.from('confluence_tags').update(data).eq('id', id).select().single(), 3000);
+  if (res.error) return null;
+  return res.data as ConfluenceTag;
 }
 
-export async function deleteConfluenceTag(id: string): Promise<boolean> {
-  tagsCache = null;
-  try {
-    const res = await withTimeout(supabase.from('confluence_tags').delete().eq('id', id), 3000);
-    if (!res.error) {
-      const db = readDb();
-      db.confluence_tags = db.confluence_tags.filter((t) => t.id !== id);
-      safeWriteDb(db);
-      return true;
-    }
-  } catch {}
-  const db = readDb();
-  const before = db.confluence_tags.length;
-  db.confluence_tags = db.confluence_tags.filter((t) => t.id !== id);
-  safeWriteDb(db);
-  return db.confluence_tags.length < before;
+export async function deleteConfluenceTag(id: string, client?: SupabaseClient): Promise<boolean> {
+  const sb = await getClient(client);
+  const res = await withTimeout(sb.from('confluence_tags').delete().eq('id', id), 3000);
+  return !res.error;
 }
 
 // ─── Computed Stats ───────────────────────────────────────────────────────────
@@ -402,11 +247,12 @@ export async function deleteConfluenceTag(id: string): Promise<boolean> {
 export async function getAccountStats(
   accountId?: string,
   passedAccounts?: Account[],
-  passedTrades?: Trade[]
+  passedTrades?: Trade[],
+  client?: SupabaseClient
 ): Promise<AccountStats[]> {
-  const accounts = passedAccounts ?? (await getAccounts());
+  const accounts = passedAccounts ?? (await getAccounts(client));
   const filteredAccounts = accountId ? accounts.filter((a) => a.id === accountId) : accounts;
-  const allTrades = passedTrades ?? (await getTrades());
+  const allTrades = passedTrades ?? (await getTrades(undefined, client));
 
   return filteredAccounts.map((account) => {
     const trades = allTrades.filter((t) => t.account_id === account.id && isEvaluatedTrade(t));
@@ -445,20 +291,20 @@ export interface EquityPoint {
 export async function getEquityCurve(
   accountId?: string,
   passedAccounts?: Account[],
-  passedTrades?: Trade[]
+  passedTrades?: Trade[],
+  client?: SupabaseClient
 ): Promise<EquityPoint[]> {
-  const accounts = passedAccounts ?? (await getAccounts());
+  const accounts = passedAccounts ?? (await getAccounts(client));
   let startBalance = 1000;
   if (accountId) {
     const acc = accounts.find((a) => a.id === accountId);
     if (acc) startBalance = acc.initial_balance || 1000;
   } else {
-    // Use primary live account's initial balance (never sum across accounts)
     const primaryLive = accounts.find((a) => a.account_type === 'live') ?? accounts[0];
     if (primaryLive?.initial_balance) startBalance = primaryLive.initial_balance;
   }
 
-  const allTrades = passedTrades ?? (await getTrades(accountId));
+  const allTrades = passedTrades ?? (await getTrades(accountId, client));
   const trades = (accountId ? allTrades.filter((t) => t.account_id === accountId) : allTrades)
     .filter(isEvaluatedTrade)
     .sort((a, b) => new Date(a.closed_at ?? a.opened_at).getTime() - new Date(b.closed_at ?? b.opened_at).getTime());
@@ -496,169 +342,112 @@ export async function getEquityCurve(
 
 // ─── Routine Data Persistence ──────────────────────────────────────────────────
 
-export async function getRoutine(): Promise<RoutineData> {
-  const now = Date.now();
-  if (routineCache && now - routineCache.time < CACHE_TTL) {
-    return routineCache.data;
-  }
+export async function getRoutine(client?: SupabaseClient): Promise<RoutineData> {
   try {
-    const res = await withTimeout(supabase.from('routine').select('*').eq('id', 'spy-a-session-routine').single(), 2500);
+    const sb = await getClient(client);
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return DEFAULT_ROUTINE_DATA;
+
+    const res = await withTimeout(
+      sb.from('routine').select('*').eq('user_id', user.id).single(),
+      3000
+    );
     if (!res.error && res.data) {
-      const data = res.data as RoutineData;
-      routineCache = { data, time: now };
-      return data;
+      return res.data as RoutineData;
     }
-  } catch {}
-
-  const db = readDb();
-  if ((db as any).routine) {
-    routineCache = { data: (db as any).routine, time: now };
-    return (db as any).routine;
+  } catch (err) {
+    console.error('[getRoutine] Error:', err);
   }
-
   return DEFAULT_ROUTINE_DATA;
 }
 
-export async function updateRoutine(data: RoutineData): Promise<RoutineData> {
-  routineCache = null;
-  const updated: RoutineData = { ...data, updated_at: new Date().toISOString() };
-  try {
-    const res = await withTimeout(supabase.from('routine').upsert(updated).select().single(), 3000);
-    if (!res.error && res.data) {
-      const saved = res.data as RoutineData;
-      const db = readDb();
-      (db as any).routine = saved;
-      safeWriteDb(db);
-      return saved;
-    }
-  } catch {}
+export async function updateRoutine(data: RoutineData, client?: SupabaseClient): Promise<RoutineData> {
+  const sb = await getClient(client);
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) throw new Error('Unauthenticated');
 
-  const db = readDb();
-  (db as any).routine = updated;
-  safeWriteDb(db);
-  return updated;
+  const updated = {
+    ...data,
+    user_id: user.id,
+    updated_at: new Date().toISOString(),
+  };
+
+  const res = await withTimeout(sb.from('routine').upsert(updated).select().single(), 3000);
+  if (res.error) throw new Error(res.error.message);
+  return res.data as RoutineData;
 }
 
 // ─── Chart Observations ───────────────────────────────────────────────────────
 
-export async function getObservations(): Promise<ChartObservation[]> {
-  const now = Date.now();
-  if (observationsCache && now - observationsCache.time < CACHE_TTL) {
-    return observationsCache.data;
-  }
+export async function getObservations(client?: SupabaseClient): Promise<ChartObservation[]> {
   try {
+    const sb = await getClient(client);
     const res = await withTimeout(
-      supabase.from('chart_observations').select('*').order('observed_at', { ascending: false }),
-      2500
+      sb.from('chart_observations').select('*').order('observed_at', { ascending: false }),
+      3000
     );
     if (!res.error && res.data) {
-      const data = res.data as ChartObservation[];
-      observationsCache = { data, time: now };
-      return data;
+      return res.data as ChartObservation[];
     }
-  } catch {}
-  const db = readDb();
-  return (db as any).chart_observations ?? [];
+  } catch (err) {
+    console.error('[getObservations] Error:', err);
+  }
+  return [];
 }
 
-export async function getObservation(id: string): Promise<ChartObservation | undefined> {
-  const observations = await getObservations();
+export async function getObservation(id: string, client?: SupabaseClient): Promise<ChartObservation | undefined> {
+  const observations = await getObservations(client);
   return observations.find((o) => o.id === id);
 }
 
 export async function createObservation(
-  data: Omit<ChartObservation, 'id' | 'created_at' | 'updated_at'>
+  data: Omit<ChartObservation, 'id' | 'created_at' | 'updated_at'>,
+  client?: SupabaseClient
 ): Promise<ChartObservation> {
-  observationsCache = null;
+  const sb = await getClient(client);
+  const { data: { user } } = await sb.auth.getUser();
+  const userId = user?.id ?? data.user_id ?? 'local';
+
   const observation: ChartObservation = {
     ...data,
+    user_id: userId,
     id: crypto.randomUUID(),
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
 
-  // Strip undefined and null values — Supabase check constraints reject explicit nulls
   const supabasePayload = Object.fromEntries(
     Object.entries(observation).filter(([, v]) => v !== null && v !== undefined)
   );
 
-  try {
-    const res = await withTimeout(
-      supabase.from('chart_observations').insert(supabasePayload).select().single(),
-      3000
-    );
-    if (!res.error && res.data) {
-      const inserted = res.data as ChartObservation;
-      const db = readDb();
-      if (!(db as any).chart_observations) (db as any).chart_observations = [];
-      (db as any).chart_observations.push(inserted);
-      safeWriteDb(db);
-      return inserted;
-    } else if (res.error) {
-      console.error('[createObservation] Supabase error:', res.error.message, res.error.code, res.error.details);
-    }
-  } catch (err) {
-    console.error('[createObservation] Exception:', err);
+  const res = await withTimeout(
+    sb.from('chart_observations').insert(supabasePayload).select().single(),
+    3000
+  );
+  if (res.error) {
+    console.error('[createObservation] Supabase error:', res.error);
+    throw new Error(res.error.message);
   }
-  const db = readDb();
-  if (!(db as any).chart_observations) (db as any).chart_observations = [];
-  (db as any).chart_observations.push(observation);
-  safeWriteDb(db);
-  return observation;
+  return res.data as ChartObservation;
 }
 
 export async function updateObservation(
   id: string,
-  data: Partial<ChartObservation>
+  data: Partial<ChartObservation>,
+  client?: SupabaseClient
 ): Promise<ChartObservation | null> {
-  observationsCache = null;
+  const sb = await getClient(client);
   const payload = { ...data, updated_at: new Date().toISOString() };
-  try {
-    const res = await withTimeout(
-      supabase.from('chart_observations').update(payload).eq('id', id).select().single(),
-      3000
-    );
-    if (!res.error && res.data) {
-      const updated = res.data as ChartObservation;
-      const db = readDb();
-      const arr: ChartObservation[] = (db as any).chart_observations ?? [];
-      const idx = arr.findIndex((o) => o.id === id);
-      if (idx !== -1) arr[idx] = updated;
-      (db as any).chart_observations = arr;
-      safeWriteDb(db);
-      return updated;
-    }
-  } catch {}
-  const db = readDb();
-  const arr: ChartObservation[] = (db as any).chart_observations ?? [];
-  const idx = arr.findIndex((o) => o.id === id);
-  if (idx === -1) return null;
-  arr[idx] = { ...arr[idx], ...payload };
-  (db as any).chart_observations = arr;
-  safeWriteDb(db);
-  return arr[idx];
+  const res = await withTimeout(
+    sb.from('chart_observations').update(payload).eq('id', id).select().single(),
+    3000
+  );
+  if (res.error) return null;
+  return res.data as ChartObservation;
 }
 
-export async function deleteObservation(id: string): Promise<boolean> {
-  observationsCache = null;
-  try {
-    const res = await withTimeout(
-      supabase.from('chart_observations').delete().eq('id', id),
-      3000
-    );
-    if (!res.error) {
-      const db = readDb();
-      const arr: ChartObservation[] = (db as any).chart_observations ?? [];
-      (db as any).chart_observations = arr.filter((o) => o.id !== id);
-      safeWriteDb(db);
-      return true;
-    }
-  } catch {}
-  const db = readDb();
-  const arr: ChartObservation[] = (db as any).chart_observations ?? [];
-  const before = arr.length;
-  (db as any).chart_observations = arr.filter((o) => o.id !== id);
-  safeWriteDb(db);
-  return (db as any).chart_observations.length < before;
+export async function deleteObservation(id: string, client?: SupabaseClient): Promise<boolean> {
+  const sb = await getClient(client);
+  const res = await withTimeout(sb.from('chart_observations').delete().eq('id', id), 3000);
+  return !res.error;
 }
-

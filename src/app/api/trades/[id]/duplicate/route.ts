@@ -1,18 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { duplicateTrade } from '@/lib/db';
+import { getAuthenticatedUserId } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
-export async function POST(
-  _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const userId = await getAuthenticatedUserId();
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
   const { id } = await params;
-  const copy = await duplicateTrade(id);
-  if (!copy) {
-    return NextResponse.json({ error: 'Trade not found' }, { status: 404 });
-  }
+  const duplicate = await duplicateTrade(id);
+  if (!duplicate) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   revalidatePath('/', 'layout');
-  return NextResponse.json(copy, { status: 201 });
+  return NextResponse.json(duplicate, { status: 201 });
 }

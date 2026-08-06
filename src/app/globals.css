@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* ─── Theme tokens (raw CSS vars, used in arbitrary Tailwind values) ─────── */
 :root {
   --t-bg:        #0f0f0f;
@@ -34,18 +36,18 @@
 }
 
 html.light {
-  --t-bg:        #f5f5f7;
+  --t-bg:        #f8fafc;
   --t-surface:   #ffffff;
   --t-card:      #ffffff;
-  --t-card-h:    #f4f4f7;
-  --t-border:    #d1d1d6;
-  --t-border-s:  #e0e0e5;
+  --t-card-h:    #f1f5f9;
+  --t-border:    #cbd5e1;
+  --t-border-s:  #e2e8f0;
   --t-muted:     #8e8e99;
   --t-subtle:    #6b6b78;
   --t-fg-dim:    #555562;
   --t-fg-muted:  #2c2c35;
-  --t-fg:        #111118;
-  --t-divider:   #e5e5ea;
+  --t-fg:        #0f172a;
+  --t-divider:   #e2e8f0;
   --t-input-ph:  #9e9ea8;
   color-scheme: light;
 
@@ -66,53 +68,74 @@ html.light {
   --t-ph3:   #8e8e99;
 }
 
-html.light [class*="bg-[#0f0f0f]"] { background-color: var(--t-bg) !important; }
-html.light [class*="bg-[#191919]"] { background-color: var(--t-surface) !important; }
-html.light [class*="bg-[#1f1f1f]"] { background-color: var(--t-card-h) !important; }
-html.light [class*="bg-[#202020]"] { background-color: var(--t-card) !important; }
-html.light [class*="bg-[#252525]"] { background-color: var(--t-card-h) !important; }
-html.light [class*="bg-[#2a2a2a]"] { background-color: var(--t-border-s) !important; }
+/* Light mode background overrides */
+html.light [class*="bg-[#0f0f0f]"] { background-color: #f8fafc !important; }
+html.light [class*="bg-[#191919]"] { background-color: #ffffff !important; }
+html.light [class*="bg-[#1f1f1f]"] { background-color: #f1f5f9 !important; }
+html.light [class*="bg-[#202020]"] { background-color: #ffffff !important; }
+html.light [class*="bg-[#252525]"] { background-color: #f1f5f9 !important; }
+html.light [class*="bg-[#2a2a2a]"] { background-color: #e2e8f0 !important; }
 
-html.light [class*="bg-[#0a0a0f]"] { background-color: var(--t-deep) !important; }
-html.light [class*="bg-[#0d0d0d]"] { background-color: var(--t-deep2) !important; }
-html.light [class*="bg-[#0d0d14]"] { background-color: var(--t-deep) !important; }
+html.light [class*="bg-[#0a0a0f]"] { background-color: #ffffff !important; }
+html.light [class*="bg-[#0d0d0d]"] { background-color: #f8fafc !important; }
+html.light [class*="bg-[#0d0d14]"] { background-color: #ffffff !important; }
 html.light [class*="bg-[#101018]"] { background-color: #f0f0f5 !important; }
-html.light [class*="bg-[#111]"]    { background-color: var(--t-deep4) !important; }
-html.light [class*="bg-[#111111]"] { background-color: var(--t-deep4) !important; }
+html.light [class*="bg-[#111]"]    { background-color: #f2f2f5 !important; }
+html.light [class*="bg-[#111111]"] { background-color: #f2f2f5 !important; }
 html.light [class*="bg-[#11111e]"] { background-color: #f8f9fc !important; }
-html.light [class*="bg-[#12121a]"] { background-color: var(--t-deep2) !important; }
-html.light [class*="bg-[#12121e]"] { background-color: var(--t-deep2) !important; }
-html.light [class*="bg-[#12121d]"] { background-color: var(--t-deep2) !important; }
+html.light [class*="bg-[#12121a]"] { background-color: #ffffff !important; }
+html.light [class*="bg-[#12121e]"] { background-color: #ffffff !important; }
+html.light [class*="bg-[#12121d]"] { background-color: #ffffff !important; }
 html.light [class*="bg-[#121220]"] { background-color: #f0f3ff !important; }
-html.light [class*="bg-[#141414]"] { background-color: var(--t-deep5) !important; }
-html.light [class*="bg-[#161616]"] { background-color: var(--t-deep5) !important; }
-html.light [class*="bg-[#161622]"] { background-color: #ffffff !important; }
-html.light [class*="bg-[#171724]"] { background-color: #f8f9fc !important; }
+html.light [class*="bg-[#141414]"] { background-color: #eeeef2 !important; }
+html.light [class*="bg-[#161616]"] { background-color: #eeeef2 !important; }
+html.light [class*="bg-[#161622]"] { background-color: #f8fafc !important; }
+html.light [class*="bg-[#171724]"] { background-color: #f8fafc !important; }
 html.light [class*="bg-[#181826]"] { background-color: #ffffff !important; }
-html.light [class*="bg-[#191926]"] { background-color: #f8f9fc !important; }
+html.light [class*="bg-[#191926]"] { background-color: #f0f3ff !important; }
 html.light [class*="bg-[#14141f]"] { background-color: #ffffff !important; }
 html.light [class*="bg-[#181828]"] { background-color: #f0f3ff !important; }
 html.light [class*="bg-[#0c0c14]"] { background-color: #ffffff !important; }
-html.light [class*="bg-[#1a1a1a]"] { background-color: var(--t-b1) !important; }
-html.light [class*="bg-[#202030]"] { background-color: #f3f4f6 !important; }
-html.light [class*="bg-[#222234]"] { background-color: #f3f4f6 !important; }
+html.light [class*="bg-[#1a1a1a]"] { background-color: #e8e8ed !important; }
+html.light [class*="bg-[#202030]"] { background-color: #e0e7ff !important; }
+html.light [class*="bg-[#222234]"] { background-color: #e2e8f0 !important; }
 
-html.light [class*="border-[#2a2a2a]"] { border-color: var(--t-border) !important; }
-html.light [class*="border-[#1f1f1f]"] { border-color: var(--t-divider) !important; }
-html.light [class*="border-[#333]"]     { border-color: var(--t-border) !important; }
-html.light [class*="border-[#3a3a3a]"] { border-color: var(--t-border) !important; }
-html.light [class*="border-[#1a1a1a]"] { border-color: var(--t-b1) !important; }
-html.light [class*="border-[#1a1a28]"] { border-color: var(--t-b2) !important; }
-html.light [class*="border-[#1e1e1e]"] { border-color: var(--t-b3) !important; }
-html.light [class*="border-[#1e1e2d]"] { border-color: var(--t-b3) !important; }
-html.light [class*="border-[#1e1e30]"] { border-color: var(--t-b4) !important; }
-html.light [class*="border-[#252525]"] { border-color: var(--t-b5) !important; }
-html.light [class*="border-[#2a2a40]"] { border-color: var(--t-b6) !important; }
-html.light [class*="border-[#222]"]    { border-color: var(--t-border-s) !important; }
+/* Light mode border defaults */
+html.light [class*="border-[#2a2a2a]"] { border-color: #cbd5e1 !important; }
+html.light [class*="border-[#1f1f1f]"] { border-color: #cbd5e1 !important; }
+html.light [class*="border-[#333]"]     { border-color: #cbd5e1 !important; }
+html.light [class*="border-[#3a3a3a]"] { border-color: #cbd5e1 !important; }
+html.light [class*="border-[#1a1a1a]"] { border-color: #cbd5e1 !important; }
+html.light [class*="border-[#1a1a28]"] { border-color: #cbd5e1 !important; }
+html.light [class*="border-[#1e1e1e]"] { border-color: #cbd5e1 !important; }
+html.light [class*="border-[#1e1e2d]"] { border-color: #cbd5e1 !important; }
+html.light [class*="border-[#1e1e30]"] { border-color: #cbd5e1 !important; }
+html.light [class*="border-[#252525]"] { border-color: #cbd5e1 !important; }
+html.light [class*="border-[#2a2a40]"] { border-color: #cbd5e1 !important; }
+html.light [class*="border-[#222]"]    { border-color: #cbd5e1 !important; }
+html.light [class*="border-[#222234]"] { border-color: #cbd5e1 !important; }
+html.light [class*="border-[#1c1c2b]"] { border-color: #cbd5e1 !important; }
+
+/* Higher-specificity Light mode hover rules placed after defaults */
+html.light [class*="hover:border-indigo"]:hover,
+html.light [class*="hover:border-amber"]:hover,
+html.light [class*="hover:border-purple"]:hover,
+html.light .hover\:border-indigo-400:hover,
+html.light .hover\:border-indigo-500:hover,
+html.light .hover\:border-indigo-600:hover {
+  border-color: #6366f1 !important;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.15) !important;
+}
+
+html.light [class*="hover:bg-slate"]:hover,
+html.light .hover\:bg-slate-50:hover,
+html.light .hover\:bg-slate-100:hover {
+  background-color: #f1f5f9 !important;
+}
 
 html.light body {
-  background-color: #f5f5f7 !important;
-  color: #111118 !important;
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
 }
 
 html.light h1,
@@ -121,21 +144,26 @@ html.light h3,
 html.light h4,
 html.light h5,
 html.light h6 {
-  color: #111827 !important;
+  color: #0f172a !important;
 }
 
 /* ── Theme text overrides for light mode ─────────────────────────── */
-html.light [class*="text-[#e8e8e8]"] { color: var(--t-fg) !important; }
-html.light [class*="text-[#e0e0e0]"] { color: var(--t-fg) !important; }
-html.light [class*="text-[#a0a0a0]"] { color: #374151 !important; }
-html.light [class*="text-[#737373]"] { color: #4b5563 !important; }
-html.light [class*="text-[#4a4a4a]"] { color: #4b5563 !important; }
-html.light [class*="text-[#3a3a3a]"] { color: #374151 !important; }
-html.light [class*="text-[#333]"]    { color: #111827 !important; }
-html.light [class*="text-[#2e2e2e]"] { color: #4b5563 !important; }
-html.light [class*="text-[#2a2a2a]"] { color: #4b5563 !important; }
-html.light [class*="text-[#555]"]    { color: #4b5563 !important; }
-html.light [class*="text-[#444]"]    { color: #4b5563 !important; }
+html.light [class*="text-[#e8e8e8]"] { color: #0f172a !important; }
+html.light [class*="text-[#e0e0e0]"] { color: #0f172a !important; }
+html.light [class*="text-[#a0a0a0]"] { color: #475569 !important; }
+html.light [class*="text-[#737373]"] { color: #475569 !important; }
+html.light [class*="text-[#4a4a4a]"] { color: #475569 !important; }
+html.light [class*="text-[#3a3a3a]"] { color: #334155 !important; }
+html.light [class*="text-[#333]"]    { color: #0f172a !important; }
+html.light [class*="text-[#2e2e2e]"] { color: #475569 !important; }
+html.light [class*="text-[#2a2a2a]"] { color: #475569 !important; }
+html.light [class*="text-[#555]"]    { color: #475569 !important; }
+html.light [class*="text-[#444]"]    { color: #475569 !important; }
+
+html.light [class*="text-slate-200"] { color: #1e293b !important; }
+html.light [class*="text-slate-300"] { color: #334155 !important; }
+html.light [class*="text-indigo-200"] { color: #1e1b4b !important; }
+html.light [class*="text-indigo-300"] { color: #312e81 !important; }
 
 html.light [class*="text-emerald-400"] { color: #059669 !important; }
 html.light [class*="text-red-400"]     { color: #dc2626 !important; }
@@ -152,13 +180,13 @@ html.light select,
 html.light textarea,
 html.light option {
   background-color: #ffffff !important;
-  border-color: #d1d1d6 !important;
-  color: #111827 !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
 }
 
 html.light select option {
   background-color: #ffffff !important;
-  color: #111827 !important;
+  color: #0f172a !important;
 }
 
 /* Target exact text classes on form elements */
@@ -171,7 +199,7 @@ html.light textarea[class*="text-[#e0e0e0]"],
 html.light input[class*="font-mono"],
 html.light select[class*="font-mono"],
 html.light textarea[class*="font-mono"] {
-  color: #111827 !important;
+  color: #0f172a !important;
 }
 
 html.light input::placeholder,
@@ -186,7 +214,7 @@ html.light select:focus,
 html.light textarea:focus {
   border-color: #6366f1 !important;
   background-color: #ffffff !important;
-  color: #111827 !important;
+  color: #0f172a !important;
   outline: none;
 }
 

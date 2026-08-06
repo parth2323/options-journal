@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   TableProperties,
@@ -15,11 +15,14 @@ import {
   Clock,
   Lightbulb,
   BarChart2,
+  LogOut,
+  User as UserIcon,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
+import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { toast } from 'sonner';
 
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -35,7 +38,44 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string | null>(null);
+
+  useEffect(() => {
+    const supabase = createSupabaseBrowserClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        setUserEmail(user.email ?? null);
+        setUserName(user.user_metadata?.full_name ?? user.email?.split('@')[0] ?? null);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUserEmail(session.user.email ?? null);
+        setUserName(session.user.user_metadata?.full_name ?? session.user.email?.split('@')[0] ?? null);
+      } else {
+        setUserEmail(null);
+        setUserName(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      const supabase = createSupabaseBrowserClient();
+      await supabase.auth.signOut();
+      toast.success('Logged out safely');
+      router.push('/login');
+      router.refresh();
+    } catch {
+      toast.error('Failed to log out');
+    }
+  };
 
   const NavContent = () => (
     <>
@@ -59,7 +99,7 @@ export function Sidebar() {
       </div>
 
       {/* Nav links */}
-      <nav className="flex-1 p-3 space-y-1">
+      <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
         {navItems.map(({ href, label, icon: Icon }) => {
           const isActive = href === '/' ? pathname === '/' : pathname.startsWith(href);
           return (
@@ -81,13 +121,36 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* Footer & Theme Toggle */}
-      <div className="p-4 border-t border-slate-100 dark:border-[#2a2a2a] space-y-3">
+      {/* User Profile & Footer & Theme Toggle */}
+      <div className="p-4 border-t border-slate-100 dark:border-[#2a2a2a] space-y-3 flex-shrink-0">
         <ThemeToggle className="w-full justify-center" />
-        <div>
-          <p className="text-[11px] font-bold text-slate-500 dark:text-[#4a4a4a]">Local storage mode</p>
-          <p className="text-[10px] text-slate-400 dark:text-[#3a3a3a] mt-0.5">Drop CSVs in /data folder</p>
-        </div>
+
+        {userEmail && (
+          <div className="pt-2 border-t border-slate-100 dark:border-[#252525]">
+            <div className="flex items-center justify-between gap-2 bg-slate-50 dark:bg-[#1f1f2b] border border-slate-200/80 dark:border-[#2a2a3c] rounded-xl p-2.5">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-7 h-7 rounded-lg bg-indigo-600/20 border border-indigo-500/30 text-indigo-500 flex items-center justify-center flex-shrink-0">
+                  <UserIcon className="w-3.5 h-3.5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-slate-900 dark:text-white truncate leading-tight">
+                    {userName ?? 'Trader'}
+                  </p>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate leading-tight">
+                    {userEmail}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all flex-shrink-0"
+                title="Log Out"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );

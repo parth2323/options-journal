@@ -3,10 +3,14 @@ import { revalidatePath } from 'next/cache';
 import { getTrades, createTrade } from '@/lib/db';
 import { TradeResult, TradeStatus } from '@/lib/types';
 import { calculateGrossPnl, calculatePercentRisk, suggestResult } from '@/lib/utils';
+import { getAuthenticatedUserId } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
+  const userId = await getAuthenticatedUserId();
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
   const { searchParams } = new URL(req.url);
   const accountId = searchParams.get('account_id') ?? undefined;
   const trades = await getTrades(accountId);
@@ -14,6 +18,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const userId = await getAuthenticatedUserId();
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
   const body = await req.json();
   let grossPnl = Number(body.gross_pnl) || 0;
   if (!body.gross_pnl && body.entry_price != null && body.exit_price != null) {
@@ -47,11 +54,10 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Auto-suggest result if not explicitly set
   let result: TradeResult = body.result || suggestResult(netPnl);
 
   const trade = await createTrade({
-    user_id: 'local',
+    user_id: userId,
     account_id: body.account_id,
     symbol: body.symbol,
     contract_label: body.contract_label,

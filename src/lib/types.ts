@@ -78,7 +78,14 @@ export type TradeFormData = Omit<Trade, 'id' | 'user_id' | 'net_pnl' | 'created_
 export type AccountFormData = Omit<Account, 'id' | 'user_id' | 'created_at'>;
 
 // ── AI Coach & Feedback Types ────────────────────────────────────────────────
-export type TimeframeOption = 'today' | 'week' | 'month' | 'ytd' | 'all';
+export type TimeframeOption = 'today' | 'week' | 'all';
+
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: string;
+}
 
 export interface CoachScores {
   overall: number;

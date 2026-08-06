@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getObservations, createObservation } from '@/lib/db';
+import { getAuthenticatedUserId } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
+  const userId = await getAuthenticatedUserId();
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
   try {
     const observations = await getObservations();
     return NextResponse.json(observations);
@@ -13,9 +17,12 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const userId = await getAuthenticatedUserId();
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
   try {
     const body = await req.json();
-    const { symbol, title, observed_at, user_id } = body;
+    const { symbol, title, observed_at } = body;
     if (!symbol || !title || !observed_at) {
       return NextResponse.json(
         { error: 'symbol, title, and observed_at are required' },
@@ -23,10 +30,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Build payload — only include optional fields if they have real values.
-    // Passing explicit `null` to Supabase check-constraint columns causes silent rejection.
     const payload: Parameters<typeof createObservation>[0] = {
-      user_id: user_id ?? 'local',
+      user_id: userId,
       symbol: String(symbol).toUpperCase(),
       title: String(title).trim(),
       observed_at: String(observed_at),

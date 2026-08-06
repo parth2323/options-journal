@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getTrades, getAccounts } from '@/lib/db';
+import { getTrades, getAccounts, getObservations } from '@/lib/db';
 import { Trade, TimeframeOption, CoachReport, CoachMetricsSnapshot } from '@/lib/types';
 import { calculateAmountRisked, calculateRoiPercent, isEvaluatedTrade } from '@/lib/utils';
+import { getAuthenticatedUserId } from '@/lib/auth';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,12 +17,6 @@ function filterTradesByTimeframe(trades: Trade[], timeframe: TimeframeOption): T
   const distToMon = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
   const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - distToMon).getTime();
 
-  // Current month (1st of month)
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-
-  // YTD (Jan 1 of current year)
-  const ytdStart = new Date(now.getFullYear(), 0, 1).getTime();
-
   return trades.filter((t) => {
     const tTime = new Date(t.opened_at).getTime();
     if (isNaN(tTime)) return true;
@@ -29,10 +25,6 @@ function filterTradesByTimeframe(trades: Trade[], timeframe: TimeframeOption): T
         return tTime >= todayStart;
       case 'week':
         return tTime >= weekStart;
-      case 'month':
-        return tTime >= monthStart;
-      case 'ytd':
-        return tTime >= ytdStart;
       case 'all':
       default:
         return true;
@@ -139,7 +131,7 @@ function computeMetrics(allTrades: Trade[]): CoachMetricsSnapshot {
   const sortedSessions = Object.entries(sessionStats).sort((a, b) => b[1].pnl - a[1].pnl);
   const bestSession = sortedSessions.length > 0 ? sortedSessions[0][0] : 'N/A';
 
-  // Total leak estimation (large losses > 2.5x avg loss or negative emotion/mistake trades)
+  // Total leak estimation
   const leakThreshold = avgLoss > 0 ? avgLoss * 2 : 100;
   const oversizedLosses = losses.filter((t) => Math.abs(t.net_pnl) > leakThreshold);
   const totalLeakPnl = Math.abs(oversizedLosses.reduce((s, t) => s + t.net_pnl, 0));
@@ -167,12 +159,11 @@ function computeMetrics(allTrades: Trade[]): CoachMetricsSnapshot {
   };
 }
 
-// Helper: Fallback algorithmic report generator if DeepSeek API key is missing or errors out
+// Helper: Fallback report generator
 function generateFallbackReport(timeframe: TimeframeOption, metrics: CoachMetricsSnapshot, trades: Trade[]): CoachReport {
   const isPositive = metrics.netPnl >= 0;
   const wr = metrics.winRate;
 
-  // Calculate scores deterministically
   const disciplineScore = Math.min(100, Math.max(30, Math.round(wr * 0.5 + (metrics.profitFactor > 1.5 ? 45 : 25))));
   const riskScore = Math.min(100, Math.max(30, Math.round(metrics.avgLoss > 0 ? Math.min(95, (metrics.avgWin / metrics.avgLoss) * 35 + 30) : 75)));
   const selectionScore = Math.min(100, Math.max(30, Math.round(wr * 0.7 + 25)));
@@ -279,17 +270,28 @@ function generateFallbackReport(timeframe: TimeframeOption, metrics: CoachMetric
 }
 
 export async function POST(req: NextRequest) {
+  const userId = await getAuthenticatedUserId();
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const supabase = await createSupabaseServerClient();
+
   try {
     const body = await req.json();
     const timeframe: TimeframeOption = body.timeframe ?? 'all';
     const accountId: string | undefined = body.account_id ?? undefined;
     const skipAi: boolean = body.skipAi === true;
 
-    const [allTrades, accounts] = await Promise.all([getTrades(accountId), getAccounts()]);
+    // Fetch user-isolated trades, accounts, and chart observations using authenticated server client
+    const [allTrades, accounts, observations] = await Promise.all([
+      getTrades(accountId, supabase),
+      getAccounts(supabase),
+      getObservations(supabase),
+    ]);
+
     const filteredTrades = filterTradesByTimeframe(allTrades, timeframe);
     const metrics = computeMetrics(filteredTrades);
 
-    // If skipAi is requested, return local quantitative analysis instantly (0 DeepSeek tokens used)
+    // If skipAi is requested, return local quantitative analysis instantly
     if (skipAi) {
       const report = generateFallbackReport(timeframe, metrics, filteredTrades);
       return NextResponse.json(report);
@@ -297,7 +299,6 @@ export async function POST(req: NextRequest) {
 
     const apiKey = process.env.DEEPSEEK_API_KEY;
 
-    // If API key is not present or no trades exist, return deterministic fallback report
     if (!apiKey || apiKey.trim() === '' || filteredTrades.length === 0) {
       const report = generateFallbackReport(timeframe, metrics, filteredTrades);
       return NextResponse.json(report);
@@ -395,13 +396,27 @@ You MUST respond ONLY with a single valid JSON object adhering to this exact Typ
       notes: t.notes,
     }));
 
-    const userPrompt = `Here is the user's actual trading data for timeframe "${timeframe.toUpperCase()}":
+    const sampleObservations = observations.slice(0, 10).map((o) => ({
+      symbol: o.symbol,
+      timeframe: o.timeframe,
+      title: o.title,
+      body: o.body,
+      mood: o.mood,
+      tags: o.tags,
+      result: o.would_have_result,
+      observedAt: o.observed_at,
+    }));
+
+    const userPrompt = `Here is the user's actual trading and chart idea data for timeframe "${timeframe.toUpperCase()}":
 
 COMPUTED QUANTITATIVE METRICS:
 ${JSON.stringify(metrics, null, 2)}
 
 RECENT TRADE SAMPLES (${sampleTrades.length} trades):
 ${JSON.stringify(sampleTrades, null, 2)}
+
+USER LOGGED CHART IDEAS & OBSERVATIONS (${sampleObservations.length} ideas):
+${JSON.stringify(sampleObservations, null, 2)}
 
 Perform a deep, objective options trading analysis as an elite US SPY/QQQ options coach. Return ONLY the JSON object.`;
 
@@ -437,15 +452,14 @@ Perform a deep, objective options trading analysis as an elite US SPY/QQQ option
     }
 
     const parsedReport = JSON.parse(rawContent);
-    // Attach calculated metrics to report
     parsedReport.metrics = metrics;
     parsedReport.timeframe = timeframe;
 
     return NextResponse.json(parsedReport);
   } catch (error) {
     console.error('AI Coach API error:', error);
-    // Always return a graceful fallback report instead of failing
-    const allTrades = await getTrades();
+    const supabaseFallback = await createSupabaseServerClient();
+    const allTrades = await getTrades(undefined, supabaseFallback);
     const metrics = computeMetrics(allTrades);
     const fallback = generateFallbackReport('all', metrics, allTrades);
     return NextResponse.json(fallback, { status: 200 });
