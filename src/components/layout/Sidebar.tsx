@@ -23,6 +23,7 @@ import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { FeedbackModal } from '@/components/feedback/FeedbackModal';
 import { toast } from 'sonner';
 
 const navItems = [
@@ -44,6 +45,7 @@ export function Sidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
@@ -154,6 +156,15 @@ export function Sidebar() {
           </div>
         )}
 
+        <button
+          type="button"
+          onClick={() => setFeedbackOpen(true)}
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-500/30 text-indigo-600 dark:text-indigo-400 rounded-xl text-xs font-bold transition-all cursor-pointer"
+        >
+          <Lightbulb className="w-3.5 h-3.5" />
+          Roadmap & Feedback
+        </button>
+
         <div className="pt-2 border-t border-slate-100 dark:border-[#252525] flex items-center justify-center gap-2 text-[10px] text-slate-600 dark:text-slate-400 font-semibold">
           <Link href="/terms" target="_blank" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
             Terms
@@ -166,6 +177,8 @@ export function Sidebar() {
           <span className="text-slate-500 dark:text-slate-400">Beta v1.0</span>
         </div>
       </div>
+
+      <FeedbackModal open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
     </>
   );
 

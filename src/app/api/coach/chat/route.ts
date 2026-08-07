@@ -30,10 +30,9 @@ export async function POST(req: NextRequest) {
     const envCode = process.env.AI_BETA_ACCESS_CODE
       ? process.env.AI_BETA_ACCESS_CODE.replace(/^['"]|['"]$/g, '').trim()
       : '';
-    const validCodes = ['SPYLONG2026$p', envCode].filter(Boolean);
     const suppliedCode = (body.accessCode || '').trim();
 
-    if (!suppliedCode || !validCodes.includes(suppliedCode)) {
+    if (!envCode || !suppliedCode || suppliedCode !== envCode) {
       return NextResponse.json(
         { error: 'AI_ACCESS_REQUIRED', message: 'Beta Access Code required to chat with AI Coach.' },
         { status: 403 }

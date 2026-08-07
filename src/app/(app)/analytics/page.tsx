@@ -90,22 +90,22 @@ export default async function AnalyticsPage() {
   };
 
   return (
-    <div className="p-5 max-w-full space-y-5">
+    <div className="px-3 py-4 sm:p-5 max-w-full space-y-4 sm:space-y-5">
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-black text-slate-900 dark:text-[#e8e8e8] tracking-tight">
-            Performance Analytics
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-[#e8e8e8] tracking-tight truncate">
+            Analytics
           </h1>
-          <p className="text-xs text-slate-500 dark:text-[#737373] mt-0.5 font-medium">
-            Deep-dive stats across {closed.length} closed trade{closed.length !== 1 ? 's' : ''}
+          <p className="text-[10px] sm:text-xs text-slate-500 dark:text-[#737373] mt-0.5 font-medium">
+            {closed.length} closed trade{closed.length !== 1 ? 's' : ''}
           </p>
         </div>
-        <div className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800/30 rounded-xl px-3 py-2">
-          <Award className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-          <span className="text-xs font-bold text-indigo-700 dark:text-indigo-300">
-            {analytics.symbols.length} symbol{analytics.symbols.length !== 1 ? 's' : ''} tracked
+        <div className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800/30 rounded-xl px-2.5 py-1.5 flex-shrink-0">
+          <Award className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+          <span className="text-[10px] sm:text-xs font-bold text-indigo-700 dark:text-indigo-300">
+            {analytics.symbols.length} symbol{analytics.symbols.length !== 1 ? 's' : ''}
           </span>
         </div>
       </div>
@@ -123,7 +123,7 @@ export default async function AnalyticsPage() {
 
       {/* KPI Grid */}
       {closed.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3">
           {kpis.map(({ label, value, sub, icon: Icon, color }) => (
             <div
               key={label}

@@ -12,10 +12,9 @@ export async function POST(req: NextRequest) {
     const envCode = process.env.AI_BETA_ACCESS_CODE
       ? process.env.AI_BETA_ACCESS_CODE.replace(/^['"]|['"]$/g, '').trim()
       : '';
-    const validCodes = ['SPYLONG2026$p', envCode].filter(Boolean);
     const supplied = (accessCode || '').trim();
 
-    if (supplied && validCodes.includes(supplied)) {
+    if (envCode && supplied && supplied === envCode) {
       return NextResponse.json({ valid: true });
     }
 

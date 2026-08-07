@@ -25,7 +25,7 @@ export default async function SettingsPage() {
   ]);
 
   return (
-    <div className="p-5 sm:p-6 max-w-full">
+    <div className="px-3 py-4 sm:p-5 md:p-6 max-w-full">
       <SettingsDashboard
         user={user}
         accounts={accounts}

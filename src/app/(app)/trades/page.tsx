@@ -29,28 +29,35 @@ export default async function TradesPage() {
   const isProfit = netPnl >= 0;
 
   return (
-    <div className="p-5 max-w-full space-y-5">
+    <div className="px-3 py-4 sm:p-5 max-w-full space-y-4 sm:space-y-5">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-black text-[#e8e8e8] tracking-tight">Trade Journal</h1>
-          <p className="text-xs text-[#737373] mt-0.5 font-medium">
-            {trades.length} total recorded trade{trades.length !== 1 ? 's' : ''}
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-black text-[#e8e8e8] tracking-tight truncate">Trade Journal</h1>
+          <p className="text-[10px] sm:text-xs text-[#737373] mt-0.5 font-medium">
+            {trades.length} trade{trades.length !== 1 ? 's' : ''}
           </p>
         </div>
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <a
             href="/api/export"
-            className="flex items-center gap-2 bg-[#0a0a0f] border border-[#1a1a28] text-[#a0a0a0] hover:text-white text-xs font-bold px-3.5 py-2 rounded-xl transition-all active:scale-95 shadow-xs"
+            className="hidden sm:flex items-center gap-2 bg-[#0a0a0f] border border-[#1a1a28] text-[#a0a0a0] hover:text-white text-xs font-bold px-3.5 py-2 rounded-xl transition-all active:scale-95 shadow-xs"
           >
             <Download className="w-3.5 h-3.5" />
             Export CSV
           </a>
+          <a
+            href="/api/export"
+            className="sm:hidden flex items-center gap-1.5 bg-[#0a0a0f] border border-[#1a1a28] text-[#a0a0a0] hover:text-white text-xs font-bold px-2.5 py-2 rounded-xl transition-all active:scale-95"
+            title="Export CSV"
+          >
+            <Download className="w-3.5 h-3.5" />
+          </a>
           <Link
             href="/trades/new"
-            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-xs active:scale-95 cursor-pointer"
+            className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3 py-2 sm:px-4 rounded-xl transition-all shadow-xs active:scale-95 cursor-pointer"
           >
-            <Plus className="w-4 h-4" /> New Trade
+            <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> <span className="hidden sm:inline">New </span>Trade
           </Link>
         </div>
       </div>

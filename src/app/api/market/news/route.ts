@@ -20,8 +20,10 @@ const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
-  const category = searchParams.get('category') ?? 'general'; // 'general' | 'forex' | 'crypto' | 'merger'
-  const limit = Math.min(parseInt(searchParams.get('limit') ?? '30'), 50);
+  const rawCategory = searchParams.get('category') ?? 'general';
+  const validCategories = ['general', 'forex', 'crypto', 'merger'];
+  const category = validCategories.includes(rawCategory) ? rawCategory : 'general';
+  const limit = Math.min(Math.max(1, parseInt(searchParams.get('limit') ?? '30') || 30), 50);
 
   const apiKey = process.env.FINNHUB_API_KEY;
   if (!apiKey) {

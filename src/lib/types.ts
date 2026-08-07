@@ -291,6 +291,7 @@ export interface UserProfile {
   preferred_timezone: string;
   preferred_currency: string;
   theme_preference: 'dark' | 'light' | 'system';
+  preferred_tickers?: string[];
   ai_access_disabled?: boolean;
   created_at: string;
   updated_at: string;
@@ -313,5 +314,6 @@ export const DEFAULT_USER_PROFILE: Omit<UserProfile, 'id' | 'user_id' | 'created
   preferred_timezone: 'America/New_York',
   preferred_currency: 'USD',
   theme_preference: 'dark',
+  preferred_tickers: ['SPY', 'QQQ', 'VIX', 'IWM'],
 };
 

@@ -2,6 +2,7 @@
 
 import { EconomicCalendar } from '@/components/market/EconomicCalendar';
 import { NewsFeed } from '@/components/market/NewsFeed';
+import { LiveMarketBar } from '@/components/market/LiveMarketBar';
 import { BarChart2, CalendarDays, Newspaper } from 'lucide-react';
 import { useState } from 'react';
 
@@ -11,19 +12,22 @@ export default function MarketPage() {
   const [mobileTab, setMobileTab] = useState<Tab>('calendar');
 
   return (
-    <div className="p-5 max-w-full h-[calc(100dvh-4rem)] flex flex-col space-y-4">
+    <div className="px-3 py-4 sm:p-5 max-w-full min-h-screen flex flex-col space-y-3 sm:space-y-4">
       {/* Page header */}
       <div className="flex items-center justify-between flex-shrink-0">
-        <div>
-          <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2.5">
-            <BarChart2 className="w-6 h-6 text-indigo-500" />
-            Market Intelligence
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+            <BarChart2 className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-500 flex-shrink-0" />
+            <span className="truncate">Market</span>
           </h1>
-          <p className="text-xs text-slate-500 dark:text-[#737373] mt-0.5 font-medium">
+          <p className="text-[10px] sm:text-xs text-slate-500 dark:text-[#737373] mt-0.5 font-medium hidden sm:block">
             Economic calendar · Market news · Live data
           </p>
         </div>
       </div>
+
+      {/* Live Yahoo Finance Market Quotes Ticker */}
+      <LiveMarketBar className="flex-shrink-0" />
 
       {/* Mobile tab toggle */}
       <div className="lg:hidden flex border border-slate-200 dark:border-[#1e1e2d] rounded-xl overflow-hidden flex-shrink-0">

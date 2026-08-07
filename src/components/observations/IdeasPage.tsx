@@ -101,23 +101,23 @@ export function IdeasPage({ initialObservations }: IdeasPageProps) {
   }), [observations]);
 
   return (
-    <div className="p-5 max-w-full space-y-5">
+    <div className="px-3 py-4 sm:p-5 max-w-full space-y-4 sm:space-y-5">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2.5">
-            <Lightbulb className="w-6 h-6 text-indigo-500" />
-            Chart Ideas & Observations
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+            <Lightbulb className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-500 flex-shrink-0" />
+            <span className="truncate">Ideas</span>
           </h1>
-          <p className="text-xs text-slate-500 dark:text-[#737373] mt-0.5 font-medium">
+          <p className="text-[10px] sm:text-xs text-slate-500 dark:text-[#737373] mt-0.5 font-medium hidden sm:block">
             After-hours reflections — setups you spotted, missed, or want to remember
           </p>
         </div>
         <button
           onClick={() => setCreating(true)}
-          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-black px-4 py-2.5 rounded-xl shadow-xs transition-all active:scale-95 cursor-pointer self-start sm:self-auto"
+          className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl shadow-xs transition-all active:scale-95 cursor-pointer flex-shrink-0"
         >
-          <Plus className="w-4 h-4" /> New Observation
+          <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> <span className="hidden sm:inline">New </span>Idea
         </button>
       </div>
 

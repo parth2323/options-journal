@@ -31,8 +31,8 @@ export async function PATCH(req: NextRequest) {
     await logSecurityEvent('profile_update', 'Updated profile identity & market preferences', supabase);
 
     return NextResponse.json(updated);
-  } catch (err) {
+  } catch (err: any) {
     console.error('[PATCH /api/user/profile] Error:', err);
-    return NextResponse.json({ error: 'Failed to update profile' }, { status: 500 });
+    return NextResponse.json({ error: err.message || 'Failed to update profile' }, { status: 500 });
   }
 }

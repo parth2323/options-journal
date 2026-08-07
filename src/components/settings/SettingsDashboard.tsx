@@ -123,13 +123,13 @@ export function SettingsDashboard({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userProfile),
       });
+      const data = await res.json();
       if (res.ok) {
-        const updated = await res.json();
-        setUserProfile(updated);
+        setUserProfile(data);
         toast.success('Profile & Market Preferences updated!');
         router.refresh();
       } else {
-        toast.error('Failed to update profile');
+        toast.error(data.error || 'Failed to update profile');
       }
     } catch {
       toast.error('Error updating profile');
@@ -541,6 +541,106 @@ export function SettingsDashboard({
                     <option value="AUD">AUD ($ Australian Dollar)</option>
                   </select>
                 </div>
+
+                {/* Preferred Market Watchlist Tickers */}
+                <div className="space-y-2.5 col-span-1 md:col-span-2 pt-4 border-t border-slate-100 dark:border-[#1c1c2b]">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                    <Activity className="w-4 h-4 text-indigo-500" />
+                    Dashboard Watchlist Tickers (Live Market Bar)
+                  </label>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-normal">
+                    Customize the live quotes displayed on your Dashboard header. Enter custom stock, ETF, or index symbols (e.g. <code className="font-mono bg-slate-100 dark:bg-slate-800 px-1 rounded text-indigo-600 dark:text-indigo-400">SPY, QQQ, NVDA, AAPL</code>).
+                  </p>
+
+                  {/* Active Ticker Badges */}
+                  <div className="flex flex-wrap items-center gap-2 py-1">
+                    {(userProfile.preferred_tickers || ['SPY', 'QQQ', 'VIX', 'IWM']).map((sym, idx) => (
+                      <span
+                        key={idx}
+                        className="inline-flex items-center gap-1.5 text-xs font-mono font-black px-2.5 py-1 rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-950/50 dark:text-indigo-300 dark:border-indigo-800/40 shadow-2xs"
+                      >
+                        <span>{sym}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const current = userProfile.preferred_tickers || ['SPY', 'QQQ', 'VIX', 'IWM'];
+                            const updated = current.filter((_, i) => i !== idx);
+                            setUserProfile({ ...userProfile, preferred_tickers: updated });
+                          }}
+                          className="text-indigo-400 hover:text-red-500 transition-colors cursor-pointer"
+                          title="Remove Ticker"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      placeholder="Add Ticker Symbol (e.g. NVDA, TSLA)"
+                      className={inputClass}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const target = e.currentTarget;
+                          const val = target.value.trim().toUpperCase();
+                          if (val) {
+                            const current = userProfile.preferred_tickers || ['SPY', 'QQQ', 'VIX', 'IWM'];
+                            if (!current.includes(val)) {
+                              setUserProfile({ ...userProfile, preferred_tickers: [...current, val] });
+                            }
+                            target.value = '';
+                          }
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        const input = (e.currentTarget.previousElementSibling as HTMLInputElement);
+                        const val = input.value.trim().toUpperCase();
+                        if (val) {
+                          const current = userProfile.preferred_tickers || ['SPY', 'QQQ', 'VIX', 'IWM'];
+                          if (!current.includes(val)) {
+                            setUserProfile({ ...userProfile, preferred_tickers: [...current, val] });
+                          }
+                          input.value = '';
+                        }
+                      }}
+                      className="bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800/40 hover:bg-indigo-100 font-extrabold text-xs px-3.5 py-2 rounded-xl transition-all cursor-pointer flex-shrink-0"
+                    >
+                      + Add Ticker
+                    </button>
+                  </div>
+
+                  {/* Preset Watchlists */}
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                    <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Quick Presets:</span>
+                    <button
+                      type="button"
+                      onClick={() => setUserProfile({ ...userProfile, preferred_tickers: ['SPY', 'QQQ', 'VIX', 'IWM'] })}
+                      className="text-[10px] font-mono font-bold px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-[#1a1b2b] text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 border border-slate-200/60 dark:border-slate-800 transition-colors cursor-pointer"
+                    >
+                      Indices (SPY, QQQ, VIX, IWM)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setUserProfile({ ...userProfile, preferred_tickers: ['NVDA', 'AAPL', 'MSFT', 'TSLA'] })}
+                      className="text-[10px] font-mono font-bold px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-[#1a1b2b] text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 border border-slate-200/60 dark:border-slate-800 transition-colors cursor-pointer"
+                    >
+                      Tech Leaders (NVDA, AAPL, MSFT, TSLA)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setUserProfile({ ...userProfile, preferred_tickers: ['SPY', 'AMD', 'AMZN', 'META'] })}
+                      className="text-[10px] font-mono font-bold px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-[#1a1b2b] text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 border border-slate-200/60 dark:border-slate-800 transition-colors cursor-pointer"
+                    >
+                      Options Movers (SPY, AMD, AMZN, META)
+                    </button>
+                  </div>
+                </div>
               </div>
 
               <div className="flex justify-end pt-2">
@@ -551,7 +651,7 @@ export function SettingsDashboard({
                   className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-black px-4 py-2 rounded-xl transition-all shadow-xs cursor-pointer"
                 >
                   {savingProfile ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  Save Identity Profile
+                  Save Identity & Watchlist Profile
                 </button>
               </div>
             </div>

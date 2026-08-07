@@ -1,8 +1,9 @@
-import { getTrades, getAccounts, getAccountStats, getEquityCurve } from '@/lib/db';
+import { getTrades, getAccounts, getAccountStats, getEquityCurve, getUserProfile } from '@/lib/db';
 import { EquityCurveChart } from '@/components/dashboard/EquityCurveChart';
 import { ResultDonutChart } from '@/components/dashboard/ResultDonutChart';
 import { TodaysTradesSection } from '@/components/dashboard/TodaysTradesSection';
 import { AccountCard } from '@/components/dashboard/AccountCard';
+import { LiveMarketBar } from '@/components/market/LiveMarketBar';
 import { formatCurrency, formatPercent, isEvaluatedTrade } from '@/lib/utils';
 import Link from 'next/link';
 import { Plus, TrendingUp, TrendingDown, DollarSign, Award, Calendar, BarChart2 } from 'lucide-react';
@@ -10,7 +11,7 @@ import { Plus, TrendingUp, TrendingDown, DollarSign, Award, Calendar, BarChart2 
 export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
-  const [trades, accounts] = await Promise.all([getTrades(), getAccounts()]);
+  const [trades, accounts, userProfile] = await Promise.all([getTrades(), getAccounts(), getUserProfile()]);
   const accountStats = await getAccountStats(undefined, accounts, trades);
   const equityCurve  = await getEquityCurve(undefined, accounts, trades);
 
@@ -56,24 +57,27 @@ export default async function DashboardPage() {
   const todayUp = todaysNetPnl >= 0;
 
   return (
-    <div className="p-5 max-w-full space-y-5">
+    <div className="px-3 py-4 sm:p-5 max-w-full space-y-4 sm:space-y-5">
 
       {/* ─── Header ──────────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-black text-slate-900 dark:text-[#e8e8e8] tracking-tight">Dashboard Overview</h1>
-          <p className="text-xs text-slate-500 dark:text-[#737373] mt-0.5 font-medium">
-            Primary account starting capital:{' '}
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-[#e8e8e8] tracking-tight truncate">Dashboard</h1>
+          <p className="text-[10px] sm:text-xs text-slate-500 dark:text-[#737373] mt-0.5 font-medium hidden sm:block">
+            Starting capital:{' '}
             <span className="font-bold text-indigo-600 dark:text-indigo-400 font-mono">{formatCurrency(initialCapital)} USD</span>
           </p>
         </div>
         <Link
           href="/trades/new"
-          className="flex items-center justify-center gap-2 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-xs bg-indigo-600 hover:bg-indigo-700 active:scale-95 cursor-pointer self-start sm:self-auto"
+          className="flex items-center justify-center gap-1.5 text-white text-xs font-bold px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl transition-all shadow-xs bg-indigo-600 hover:bg-indigo-700 active:scale-95 cursor-pointer flex-shrink-0"
         >
-          <Plus className="w-4 h-4" /> Log Trade
+          <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Log Trade
         </Link>
       </div>
+
+      {/* ─── Live Market Ticker ──────────────────────────────────────────── */}
+      <LiveMarketBar symbols={userProfile?.preferred_tickers && userProfile.preferred_tickers.length > 0 ? userProfile.preferred_tickers : ['SPY', 'QQQ', 'VIX', 'IWM']} />
 
       {/* ─── KPI Cards Row 1 ─────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">

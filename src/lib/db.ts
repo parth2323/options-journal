@@ -80,7 +80,10 @@ export async function updateAccount(
   client?: SupabaseClient
 ): Promise<Account | null> {
   const sb = await getClient(client);
-  const res = await withTimeout(sb.from('accounts').update(data).eq('id', id).select().single(), 3000);
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) return null;
+
+  const res = await withTimeout(sb.from('accounts').update(data).eq('id', id).eq('user_id', user.id).select().single(), 3000);
   if (res.error) {
     console.error('[updateAccount] Supabase error:', res.error);
     return null;
@@ -90,7 +93,10 @@ export async function updateAccount(
 
 export async function deleteAccount(id: string, client?: SupabaseClient): Promise<boolean> {
   const sb = await getClient(client);
-  const res = await withTimeout(sb.from('accounts').delete().eq('id', id), 3000);
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) return false;
+
+  const res = await withTimeout(sb.from('accounts').delete().eq('id', id).eq('user_id', user.id), 3000);
   return !res.error;
 }
 
@@ -182,6 +188,9 @@ export async function updateTrade(
   client?: SupabaseClient
 ): Promise<Trade | null> {
   const sb = await getClient(client);
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) return null;
+
   const payload: Partial<Trade> = {
     ...data,
     updated_at: new Date().toISOString(),
@@ -195,14 +204,17 @@ export async function updateTrade(
     }
   }
 
-  const res = await withTimeout(sb.from('trades').update(payload).eq('id', id).select().single(), 3000);
+  const res = await withTimeout(sb.from('trades').update(payload).eq('id', id).eq('user_id', user.id).select().single(), 3000);
   if (res.error) return null;
   return res.data as Trade;
 }
 
 export async function deleteTrade(id: string, client?: SupabaseClient): Promise<boolean> {
   const sb = await getClient(client);
-  const res = await withTimeout(sb.from('trades').delete().eq('id', id), 3000);
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) return false;
+
+  const res = await withTimeout(sb.from('trades').delete().eq('id', id).eq('user_id', user.id), 3000);
   return !res.error;
 }
 
@@ -252,14 +264,20 @@ export async function updateConfluenceTag(
   client?: SupabaseClient
 ): Promise<ConfluenceTag | null> {
   const sb = await getClient(client);
-  const res = await withTimeout(sb.from('confluence_tags').update(data).eq('id', id).select().single(), 3000);
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) return null;
+
+  const res = await withTimeout(sb.from('confluence_tags').update(data).eq('id', id).eq('user_id', user.id).select().single(), 3000);
   if (res.error) return null;
   return res.data as ConfluenceTag;
 }
 
 export async function deleteConfluenceTag(id: string, client?: SupabaseClient): Promise<boolean> {
   const sb = await getClient(client);
-  const res = await withTimeout(sb.from('confluence_tags').delete().eq('id', id), 3000);
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) return false;
+
+  const res = await withTimeout(sb.from('confluence_tags').delete().eq('id', id).eq('user_id', user.id), 3000);
   return !res.error;
 }
 
@@ -461,9 +479,12 @@ export async function updateObservation(
   client?: SupabaseClient
 ): Promise<ChartObservation | null> {
   const sb = await getClient(client);
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) return null;
+
   const payload = { ...data, updated_at: new Date().toISOString() };
   const res = await withTimeout(
-    sb.from('chart_observations').update(payload).eq('id', id).select().single(),
+    sb.from('chart_observations').update(payload).eq('id', id).eq('user_id', user.id).select().single(),
     3000
   );
   if (res.error) return null;
@@ -472,7 +493,10 @@ export async function updateObservation(
 
 export async function deleteObservation(id: string, client?: SupabaseClient): Promise<boolean> {
   const sb = await getClient(client);
-  const res = await withTimeout(sb.from('chart_observations').delete().eq('id', id), 3000);
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) return false;
+
+  const res = await withTimeout(sb.from('chart_observations').delete().eq('id', id).eq('user_id', user.id), 3000);
   return !res.error;
 }
 
@@ -554,7 +578,10 @@ export async function getUserProfile(client?: SupabaseClient): Promise<UserProfi
     );
 
     if (!res.error && res.data) {
-      return res.data as UserProfile;
+      return {
+        ...res.data,
+        preferred_tickers: res.data.preferred_tickers || DEFAULT_USER_PROFILE.preferred_tickers,
+      } as UserProfile;
     }
 
     // Return virtual profile from auth metadata if DB record doesn't exist yet
@@ -567,6 +594,7 @@ export async function getUserProfile(client?: SupabaseClient): Promise<UserProfi
       preferred_timezone: DEFAULT_USER_PROFILE.preferred_timezone,
       preferred_currency: DEFAULT_USER_PROFILE.preferred_currency,
       theme_preference: DEFAULT_USER_PROFILE.theme_preference,
+      preferred_tickers: DEFAULT_USER_PROFILE.preferred_tickers,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
@@ -592,19 +620,37 @@ export async function updateUserProfile(
     preferred_timezone: data.preferred_timezone,
     preferred_currency: data.preferred_currency,
     theme_preference: data.theme_preference,
+    preferred_tickers: data.preferred_tickers,
     updated_at: new Date().toISOString(),
   };
 
   // Clean undefined keys
   const cleanRow = Object.fromEntries(Object.entries(row).filter(([, v]) => v !== undefined));
 
-  const res = await withTimeout(
+  let res = await withTimeout(
     sb.from('user_profiles').upsert(cleanRow, { onConflict: 'user_id' }).select().single(),
     3000
   );
 
-  if (res.error) throw new Error(res.error.message);
-  return res.data as UserProfile;
+  // Fallback: If preferred_tickers column doesn't exist in Supabase schema yet, retry without it
+  if (res.error && 'preferred_tickers' in cleanRow) {
+    console.warn('[updateUserProfile] Retrying without preferred_tickers column:', res.error.message);
+    const { preferred_tickers, ...baseRow } = cleanRow;
+    res = await withTimeout(
+      sb.from('user_profiles').upsert(baseRow, { onConflict: 'user_id' }).select().single(),
+      3000
+    );
+  }
+
+  if (res.error) {
+    console.error('[updateUserProfile] Supabase error:', res.error);
+    throw new Error(res.error.message);
+  }
+
+  return {
+    ...res.data,
+    preferred_tickers: data.preferred_tickers || res.data?.preferred_tickers || DEFAULT_USER_PROFILE.preferred_tickers,
+  } as UserProfile;
 }
 
 export async function getSecurityAuditLogs(client?: SupabaseClient): Promise<SecurityAuditLog[]> {

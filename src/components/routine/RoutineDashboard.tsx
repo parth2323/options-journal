@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { RoutineEditorDrawer } from './RoutineEditorDrawer';
+import { LiveMarketBar } from '../market/LiveMarketBar';
 
 interface RoutineDashboardProps {
   initialRoutine: RoutineData;
@@ -160,6 +161,9 @@ export function RoutineDashboard({ initialRoutine }: RoutineDashboardProps) {
           onSave={handleSaveRoutine}
         />
       )}
+
+      {/* ── LIVE MARKET QUOTES TICKER ─────────────────────────────────────── */}
+      <LiveMarketBar />
 
       {/* ── MACRO SCRUB QUICK LAUNCHER WIDGETS ────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
