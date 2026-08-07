@@ -1,4 +1,4 @@
-import { Account, Trade, ConfluenceTag, AccountStats, RoutineData, ChartObservation } from './types';
+import { Account, Trade, ConfluenceTag, AccountStats, RoutineData, ChartObservation, CoachPreferences, DEFAULT_COACH_PREFS, UserProfile, SecurityAuditLog, DEFAULT_USER_PROFILE } from './types';
 import { isEvaluatedTrade } from './utils';
 import { createSupabaseServerClient } from './supabase/server';
 import { DEFAULT_ROUTINE_DATA } from './routineData';
@@ -451,3 +451,181 @@ export async function deleteObservation(id: string, client?: SupabaseClient): Pr
   const res = await withTimeout(sb.from('chart_observations').delete().eq('id', id), 3000);
   return !res.error;
 }
+
+// ─── Coach Preferences ────────────────────────────────────────────────────────
+
+export async function getCoachPreferences(client?: SupabaseClient): Promise<CoachPreferences> {
+  try {
+    const sb = await getClient(client);
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return { ...DEFAULT_COACH_PREFS };
+
+    const res = await withTimeout(
+      sb.from('coach_preferences').select('*').eq('user_id', user.id).single(),
+      3000
+    );
+
+    if (!res.error && res.data) {
+      // Map snake_case DB columns → camelCase CoachPreferences
+      const row = res.data;
+      return {
+        persona:        row.persona        ?? DEFAULT_COACH_PREFS.persona,
+        tone:           row.tone           ?? DEFAULT_COACH_PREFS.tone,
+        model:          row.model          ?? DEFAULT_COACH_PREFS.model,
+        leakMultiplier: row.leak_multiplier   ?? DEFAULT_COACH_PREFS.leakMultiplier,
+        maxRiskPercent: row.max_risk_percent  ?? DEFAULT_COACH_PREFS.maxRiskPercent,
+        temperature:    row.temperature    ?? DEFAULT_COACH_PREFS.temperature,
+        tradeSampleSize:row.trade_sample_size ?? DEFAULT_COACH_PREFS.tradeSampleSize,
+        focusAreas:     row.focus_areas    ?? DEFAULT_COACH_PREFS.focusAreas,
+        updatedAt:      row.updated_at,
+      };
+    }
+  } catch (err) {
+    console.error('[getCoachPreferences] Error:', err);
+  }
+  return { ...DEFAULT_COACH_PREFS };
+}
+
+export async function updateCoachPreferences(
+  prefs: CoachPreferences,
+  client?: SupabaseClient
+): Promise<CoachPreferences> {
+  const sb = await getClient(client);
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) throw new Error('Unauthenticated');
+
+  const row = {
+    user_id:           user.id,
+    persona:           prefs.persona,
+    tone:              prefs.tone,
+    model:             prefs.model,
+    leak_multiplier:   prefs.leakMultiplier,
+    max_risk_percent:  prefs.maxRiskPercent,
+    temperature:       prefs.temperature,
+    trade_sample_size: prefs.tradeSampleSize,
+    focus_areas:       prefs.focusAreas,
+    updated_at:        new Date().toISOString(),
+  };
+
+  const res = await withTimeout(
+    sb.from('coach_preferences').upsert(row, { onConflict: 'user_id' }).select().single(),
+    3000
+  );
+  if (res.error) throw new Error(res.error.message);
+
+  return { ...prefs, updatedAt: row.updated_at };
+}
+
+// ─── User Profile & Security Audit ───────────────────────────────────────────
+
+export async function getUserProfile(client?: SupabaseClient): Promise<UserProfile | null> {
+  try {
+    const sb = await getClient(client);
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return null;
+
+    const res = await withTimeout(
+      sb.from('user_profiles').select('*').eq('user_id', user.id).single(),
+      3000
+    );
+
+    if (!res.error && res.data) {
+      return res.data as UserProfile;
+    }
+
+    // Return virtual profile from auth metadata if DB record doesn't exist yet
+    return {
+      id: crypto.randomUUID(),
+      user_id: user.id,
+      full_name: user.user_metadata?.full_name || '',
+      trader_handle: '',
+      avatar_url: user.user_metadata?.avatar_url || '',
+      preferred_timezone: DEFAULT_USER_PROFILE.preferred_timezone,
+      preferred_currency: DEFAULT_USER_PROFILE.preferred_currency,
+      theme_preference: DEFAULT_USER_PROFILE.theme_preference,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+  } catch (err) {
+    console.error('[getUserProfile] Error:', err);
+    return null;
+  }
+}
+
+export async function updateUserProfile(
+  data: Partial<UserProfile>,
+  client?: SupabaseClient
+): Promise<UserProfile> {
+  const sb = await getClient(client);
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) throw new Error('Unauthenticated');
+
+  const row = {
+    user_id: user.id,
+    full_name: data.full_name,
+    trader_handle: data.trader_handle,
+    avatar_url: data.avatar_url,
+    preferred_timezone: data.preferred_timezone,
+    preferred_currency: data.preferred_currency,
+    theme_preference: data.theme_preference,
+    updated_at: new Date().toISOString(),
+  };
+
+  // Clean undefined keys
+  const cleanRow = Object.fromEntries(Object.entries(row).filter(([, v]) => v !== undefined));
+
+  const res = await withTimeout(
+    sb.from('user_profiles').upsert(cleanRow, { onConflict: 'user_id' }).select().single(),
+    3000
+  );
+
+  if (res.error) throw new Error(res.error.message);
+  return res.data as UserProfile;
+}
+
+export async function getSecurityAuditLogs(client?: SupabaseClient): Promise<SecurityAuditLog[]> {
+  try {
+    const sb = await getClient(client);
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return [];
+
+    const res = await withTimeout(
+      sb.from('security_audit_logs').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(20),
+      3000
+    );
+
+    if (!res.error && res.data) {
+      return res.data as SecurityAuditLog[];
+    }
+  } catch (err) {
+    console.error('[getSecurityAuditLogs] Error:', err);
+  }
+  return [];
+}
+
+export async function logSecurityEvent(
+  eventType: SecurityAuditLog['event_type'],
+  description: string,
+  client?: SupabaseClient
+): Promise<boolean> {
+  try {
+    const sb = await getClient(client);
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return false;
+
+    const res = await withTimeout(
+      sb.from('security_audit_logs').insert({
+        user_id: user.id,
+        event_type: eventType,
+        description,
+        created_at: new Date().toISOString(),
+      }),
+      3000
+    );
+    return !res.error;
+  } catch (err) {
+    console.error('[logSecurityEvent] Error:', err);
+    return false;
+  }
+}
+

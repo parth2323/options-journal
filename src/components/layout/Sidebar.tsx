@@ -15,6 +15,7 @@ import {
   Clock,
   Lightbulb,
   BarChart2,
+  BarChart3,
   LogOut,
   User as UserIcon,
 } from 'lucide-react';
@@ -27,6 +28,7 @@ import { toast } from 'sonner';
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/trades', label: 'Trades', icon: TableProperties },
+  { href: '/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/ideas', label: 'Ideas', icon: Lightbulb },
   { href: '/market', label: 'Market', icon: BarChart2 },
   { href: '/routine', label: 'Routine', icon: Clock },
@@ -158,7 +160,7 @@ export function Sidebar() {
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex flex-col w-52 bg-white border-r border-slate-200/80 dark:bg-[#191919] dark:border-[#2a2a2a] h-screen sticky top-0 flex-shrink-0 shadow-xs">
+      <aside className="hidden md:flex flex-col w-52 bg-white border-r border-slate-200/80 dark:bg-[#191919] dark:border-[#2a2a2a] h-full flex-shrink-0 shadow-xs overflow-y-auto">
         <NavContent />
       </aside>
 

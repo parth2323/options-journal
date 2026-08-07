@@ -170,6 +170,50 @@ export interface CoachReport {
   goldenHabit: CoachGoldenHabit;
 }
 
+// ── AI Coach Preferences (user-configurable) ──────────────────────────────────
+
+export type CoachPersona =
+  | 'elite_options_coach'
+  | 'scalper_coach'
+  | 'swing_trader'
+  | 'risk_manager'
+  | 'psychologist';
+
+export type CoachTone = 'tough_love' | 'balanced' | 'encouraging';
+
+export type CoachModel = 'deepseek-chat' | 'deepseek-reasoner';
+
+export type CoachFocusArea =
+  | 'risk'
+  | 'timing'
+  | 'psychology'
+  | 'commissions'
+  | 'consistency';
+
+export interface CoachPreferences {
+  persona: CoachPersona;
+  tone: CoachTone;
+  model: CoachModel;
+  leakMultiplier: number;       // 1.0 – 5.0 × avg loss threshold
+  maxRiskPercent: number;       // 0.5 – 10.0 % referenced in action plan
+  temperature: number;          // 0.0 – 1.0 DeepSeek API temperature
+  tradeSampleSize: number;      // 5 – 50 trades sent to AI
+  focusAreas: CoachFocusArea[]; // which areas AI emphasizes
+  updatedAt?: string;
+}
+
+export const DEFAULT_COACH_PREFS: CoachPreferences = {
+  persona: 'elite_options_coach',
+  tone: 'balanced',
+  model: 'deepseek-chat',
+  leakMultiplier: 2.0,
+  maxRiskPercent: 2.0,
+  temperature: 0.2,
+  tradeSampleSize: 30,
+  focusAreas: ['risk', 'timing'],
+};
+
+
 // ── SPY Trader Routine Types ──────────────────────────────────────────────────
 export interface RoutinePhaseItem {
   time?: string;
@@ -235,3 +279,38 @@ export interface ChartObservation {
 }
 
 export type ObservationFormData = Omit<ChartObservation, 'id' | 'user_id' | 'created_at' | 'updated_at'>;
+
+// ── User Profile & Security Audit Types ──────────────────────────────────────
+
+export interface UserProfile {
+  id: string;
+  user_id: string;
+  full_name: string;
+  trader_handle: string;
+  avatar_url: string;
+  preferred_timezone: string;
+  preferred_currency: string;
+  theme_preference: 'dark' | 'light' | 'system';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SecurityAuditLog {
+  id: string;
+  user_id: string;
+  event_type: 'login' | 'password_change' | 'profile_update' | 'session_revoke' | 'password_reset_request';
+  description: string;
+  ip_hint?: string;
+  user_agent?: string;
+  created_at: string;
+}
+
+export const DEFAULT_USER_PROFILE: Omit<UserProfile, 'id' | 'user_id' | 'created_at' | 'updated_at'> = {
+  full_name: '',
+  trader_handle: '',
+  avatar_url: '',
+  preferred_timezone: 'America/New_York',
+  preferred_currency: 'USD',
+  theme_preference: 'dark',
+};
+

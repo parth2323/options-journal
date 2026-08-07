@@ -1,9 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getTrades, getAccounts, getObservations } from '@/lib/db';
-import { Trade, TimeframeOption, CoachReport, CoachMetricsSnapshot } from '@/lib/types';
+import { getTrades, getAccounts, getObservations, getCoachPreferences } from '@/lib/db';
+import { Trade, TimeframeOption, CoachReport, CoachMetricsSnapshot, CoachPreferences, DEFAULT_COACH_PREFS } from '@/lib/types';
 import { calculateAmountRisked, calculateRoiPercent, isEvaluatedTrade } from '@/lib/utils';
 import { getAuthenticatedUserId } from '@/lib/auth';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+
+// ── Persona system prompts ───────────────────────────────────────────────────
+const PERSONA_PROMPTS: Record<CoachPreferences['persona'], string> = {
+  elite_options_coach: `You are an elite, highly experienced, and consistently profitable professional options trader from the United States specializing in SPY and QQQ options. You have deep expertise in stocks, options, futures, and cryptocurrency markets. Mindset: Elite trader focused on discipline, probability, risk management, execution quality, and long-term consistency over mere profit chasing.`,
+  scalper_coach: `You are a precision scalping coach for 0DTE and intraday options traders. Your specialty is sub-5-minute entries, micro price action, ultra-tight stops, and capturing explosive momentum moves. Mindset: Speed, execution precision, and strict max-loss discipline are paramount.`,
+  swing_trader: `You are a multi-day swing options coach with deep expertise in theta decay, delta management, and weekly/monthly option cycles. Mindset: Patience, trend alignment, and premium management are your core values.`,
+  risk_manager: `You are a senior risk management officer from a quantitative prop trading firm. Your role is purely to identify, quantify, and eliminate trading risk — position sizing, drawdown limits, correlation risk, and volatility exposure are your domain. Mindset: Capital protection before all else.`,
+  psychologist: `You are a professional trading performance psychologist with 15+ years working with retail and institutional traders. Your specialty is identifying emotional trading patterns, FOMO, revenge trading, overconfidence, and building mental frameworks for consistency. Mindset: Behavior and mindset create performance, not just setups.`,
+};
+
+const TONE_INSTRUCTIONS: Record<CoachPreferences['tone'], string> = {
+  tough_love: 'Be extremely direct, unfiltered, and brutally honest. Treat the trader as a professional who can handle harsh truths. Do not soften critique or add unnecessary encouragement.',
+  balanced:   'Be objective, honest, and constructive. Acknowledge genuine strengths while clearly identifying improvements. Evidence-backed throughout.',
+  encouraging:'Be supportive and motivating while still identifying specific, actionable improvements. Frame weaknesses as growth opportunities.',
+};
+
+const FOCUS_INSTRUCTIONS: Record<CoachPreferences['focusAreas'][number], string> = {
+  risk:         'Dedicate significant analysis to risk management, position sizing, drawdown control, and max-loss discipline.',
+  timing:       'Heavily analyze session performance, time-of-day patterns, and day-of-week P&L breakdowns.',
+  psychology:   'Focus extra attention on emotional patterns, overtrading signals, revenge trading indicators, and consistency.',
+  commissions:  'Quantify the exact commission drag on performance. Recommend concrete cost-reduction tactics and minimum R:R needed to cover costs.',
+  consistency:  'Prioritize analysis of streak patterns, equity curve smoothness, and day-to-day behavioral consistency.',
+};
 
 export const dynamic = 'force-dynamic';
 
@@ -33,7 +56,7 @@ function filterTradesByTimeframe(trades: Trade[], timeframe: TimeframeOption): T
 }
 
 // Helper: Compute rich quantitative metrics
-function computeMetrics(allTrades: Trade[]): CoachMetricsSnapshot {
+function computeMetrics(allTrades: Trade[], leakMultiplier = 2.0): CoachMetricsSnapshot {
   const trades = allTrades.filter(isEvaluatedTrade);
   if (trades.length === 0) {
     return {
@@ -132,7 +155,7 @@ function computeMetrics(allTrades: Trade[]): CoachMetricsSnapshot {
   const bestSession = sortedSessions.length > 0 ? sortedSessions[0][0] : 'N/A';
 
   // Total leak estimation
-  const leakThreshold = avgLoss > 0 ? avgLoss * 2 : 100;
+  const leakThreshold = avgLoss > 0 ? avgLoss * leakMultiplier : 100;
   const oversizedLosses = losses.filter((t) => Math.abs(t.net_pnl) > leakThreshold);
   const totalLeakPnl = Math.abs(oversizedLosses.reduce((s, t) => s + t.net_pnl, 0));
 
@@ -281,6 +304,18 @@ export async function POST(req: NextRequest) {
     const accountId: string | undefined = body.account_id ?? undefined;
     const skipAi: boolean = body.skipAi === true;
 
+    // Fetch saved user preferences if not supplied in request body
+    const savedPrefs = await getCoachPreferences(supabase);
+    const prefs: CoachPreferences = {
+      ...DEFAULT_COACH_PREFS,
+      ...savedPrefs,
+      ...(body.coachPreferences ?? {}),
+      leakMultiplier:  Math.min(5.0,  Math.max(1.0,  Number(body.coachPreferences?.leakMultiplier ?? savedPrefs.leakMultiplier)  || DEFAULT_COACH_PREFS.leakMultiplier)),
+      maxRiskPercent:  Math.min(10.0, Math.max(0.5,  Number(body.coachPreferences?.maxRiskPercent ?? savedPrefs.maxRiskPercent)  || DEFAULT_COACH_PREFS.maxRiskPercent)),
+      temperature:     Math.min(1.0,  Math.max(0.0,  Number(body.coachPreferences?.temperature ?? savedPrefs.temperature)     || DEFAULT_COACH_PREFS.temperature)),
+      tradeSampleSize: Math.min(50,   Math.max(5,    parseInt(body.coachPreferences?.tradeSampleSize ?? savedPrefs.tradeSampleSize) || DEFAULT_COACH_PREFS.tradeSampleSize)),
+    };
+
     // Fetch user-isolated trades, accounts, and chart observations using authenticated server client
     const [allTrades, accounts, observations] = await Promise.all([
       getTrades(accountId, supabase),
@@ -289,7 +324,7 @@ export async function POST(req: NextRequest) {
     ]);
 
     const filteredTrades = filterTradesByTimeframe(allTrades, timeframe);
-    const metrics = computeMetrics(filteredTrades);
+    const metrics = computeMetrics(filteredTrades, prefs.leakMultiplier);
 
     // If skipAi is requested, return local quantitative analysis instantly
     if (skipAi) {
@@ -304,13 +339,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(report);
     }
 
-    // Call DeepSeek API
-    const systemPrompt = `You are an elite, highly experienced, and consistently profitable professional options trader from the United States specializing in SPY and QQQ options. You have deep expertise in stocks, options, futures, and cryptocurrency markets.
+    // Build dynamic system prompt from user preferences
+    const focusText = prefs.focusAreas.length > 0
+      ? prefs.focusAreas.map((f) => FOCUS_INSTRUCTIONS[f]).join(' ')
+      : 'Provide balanced coverage of all performance areas.';
 
-Your persona:
-- Mindset: Elite trader focused on discipline, probability, risk management, execution quality, and long-term consistency over mere profit chasing.
-- Tone: Objective, honest, professional, direct, constructive, and evidence-backed. No generic motivational fluff.
-- Strict Rule: Every observation, score, strength, weakness, pattern, and action item MUST be strictly supported by the actual quantitative trading statistics provided. Never hallucinate numbers.
+    const systemPrompt = `${PERSONA_PROMPTS[prefs.persona]}
+
+Tone directive: ${TONE_INSTRUCTIONS[prefs.tone]}
+Additional analysis focus: ${focusText}
+User's max risk target per trade: ${prefs.maxRiskPercent}% of account. Reference this threshold when discussing position sizing.
+
+Strict Rule: Every observation, score, strength, weakness, pattern, and action item MUST be strictly supported by the actual quantitative trading statistics provided. Never hallucinate numbers.
 
 You MUST respond ONLY with a single valid JSON object adhering to this exact TypeScript structure:
 {
@@ -378,7 +418,7 @@ You MUST respond ONLY with a single valid JSON object adhering to this exact Typ
   }
 }`;
 
-    const sampleTrades = filteredTrades.slice(0, 30).map((t) => ({
+    const sampleTrades = filteredTrades.slice(0, prefs.tradeSampleSize).map((t) => ({
       symbol: t.symbol,
       contract: t.contract_label,
       direction: t.direction,
@@ -427,13 +467,13 @@ Perform a deep, objective options trading analysis as an elite US SPY/QQQ option
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'deepseek-chat',
+        model: prefs.model,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
         ],
         response_format: { type: 'json_object' },
-        temperature: 0.2,
+        temperature: prefs.temperature,
       }),
     });
 

@@ -1,4 +1,10 @@
-import { getAccounts, getConfluenceTags } from '@/lib/db';
+import {
+  getAccounts,
+  getConfluenceTags,
+  getCoachPreferences,
+  getUserProfile,
+  getSecurityAuditLogs,
+} from '@/lib/db';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { SettingsDashboard } from '@/components/settings/SettingsDashboard';
 
@@ -10,12 +16,26 @@ export default async function SettingsPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const accounts = await getAccounts(supabase);
-  const tags = await getConfluenceTags(supabase);
+  const [accounts, tags, coachPrefs, userProfile, securityLogs] = await Promise.all([
+    getAccounts(supabase),
+    getConfluenceTags(supabase),
+    getCoachPreferences(supabase),
+    getUserProfile(supabase),
+    getSecurityAuditLogs(supabase),
+  ]);
 
   return (
     <div className="p-5 sm:p-6 max-w-full">
-      <SettingsDashboard user={user} accounts={accounts} tags={tags} />
+      <SettingsDashboard
+        user={user}
+        accounts={accounts}
+        tags={tags}
+        initialCoachPrefs={coachPrefs}
+        initialUserProfile={userProfile}
+        initialSecurityLogs={securityLogs}
+      />
     </div>
   );
 }
+
+
