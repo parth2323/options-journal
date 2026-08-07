@@ -3,7 +3,7 @@
 import { EconomicCalendar } from '@/components/market/EconomicCalendar';
 import { NewsFeed } from '@/components/market/NewsFeed';
 import { LiveMarketBar } from '@/components/market/LiveMarketBar';
-import { BarChart2, CalendarDays, Newspaper } from 'lucide-react';
+import { BarChart2, CalendarDays, Newspaper, ShieldAlert } from 'lucide-react';
 import { useState } from 'react';
 
 type Tab = 'calendar' | 'news';
@@ -73,6 +73,12 @@ export default function MarketPage() {
             <NewsFeed />
           </div>
         </div>
+      </div>
+
+      {/* Market Data Disclaimer */}
+      <div className="flex-shrink-0 pt-2 border-t border-slate-200/80 dark:border-[#1e1e2d] text-[10px] text-slate-400 dark:text-slate-500 font-medium flex items-center gap-1.5">
+        <ShieldAlert className="w-3.5 h-3.5 flex-shrink-0 text-slate-400" />
+        <span><strong>Market Data Disclaimer:</strong> Market quotes, economic calendar releases, and financial news feeds are provided strictly for educational and informational purposes. TradeVault does not guarantee the accuracy, completeness, or timeliness of third-party market data.</span>
       </div>
     </div>
   );

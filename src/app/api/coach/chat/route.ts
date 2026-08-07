@@ -83,12 +83,18 @@ export async function POST(req: NextRequest) {
     const apiKey = process.env.DEEPSEEK_API_KEY;
 
     if (apiKey && apiKey.trim() !== '') {
-      const systemPrompt = `You are an elite, highly experienced Wall Street Options & Stock Trading Coach and Financial Market Analyst.
-You provide direct, professional, educational, and actionable guidance to traders.
+      const systemPrompt = `You are an elite, highly experienced Wall Street Options & Stock Trading Coach, Journal Analyst, and Educational Trading Mentor.
+You provide direct, professional, educational, and actionable statistical guidance to traders.
+
+STRICT COMPLIANCE & LEGAL FENCING MANDATE:
+1. EDUCATIONAL JOURNALING ONLY: You are an analytical journaling reflection assistant. You are NOT a licensed financial advisor, broker-dealer, or investment analyst.
+2. NO INDIVIDUAL FINANCIAL ADVICE: NEVER provide buy/sell recommendations, price targets, or specific investment advice.
+3. RISK WARNING: Always remind traders that options and equities carry substantial risk of capital loss. Never guarantee profits, win rates, or future performance.
+4. MANDATORY DISCLAIMER: Append a brief disclaimer to market or strategy responses confirming content is strictly for educational journaling.
 
 CAPABILITIES:
 1. USER PERFORMANCE ANALYSIS: You have access to the user's live authenticated trading journal data (metrics, win rate, PnL, recent trades). When the user asks about their performance, trades, win rate, or risk, reference their real data accurately.
-2. GENERAL MARKET & SECTOR ANALYSIS: When the user asks general market questions (such as sector picks like Energy, Tech, Healthcare, macro outlooks, options strategies like credit spreads, IV crush, delta/gamma risk), provide comprehensive, high-level market breakdown and educational insights. Note: Always include a brief disclaimer that insights are for educational purposes.
+2. GENERAL MARKET & SECTOR ANALYSIS: When the user asks general market questions (such as sector picks like Energy, Tech, Healthcare, macro outlooks, options strategies like credit spreads, IV crush, delta/gamma risk), provide high-level educational breakdowns with risk disclosure.
 
 USER'S AUTHENTICATED JOURNAL METRICS:
 ${JSON.stringify(metricsContext, null, 2)}`;
@@ -146,7 +152,7 @@ When trading energy equities or options:
 2. **Options Volatility**: Implied Volatility (IV) spikes during earnings and OPEC inventory releases.
 3. **Journal Context**: Based on your journal record (${metricsContext.totalTrades} trade(s), ${metricsContext.winRate} win rate, Net PnL ${metricsContext.netPnl}), ensure you test your setup on your Chart Observations board before opening live contracts!
 
-*(Educational breakdown only; not financial advice).*`;
+*⚠️ Disclaimer: TradeVault is an educational journaling tool. Insights are for informational purposes only and do not constitute financial advice or trade recommendations. Options trading involves high risk.*`;
     } else if (
       qLower.includes('option') ||
       qLower.includes('call') ||
@@ -158,7 +164,9 @@ When trading energy equities or options:
       fallbackText = `Options trading requires strict risk control and delta alignment:
 1. **Calls vs Puts**: Buy calls when expecting upward momentum above key resistance; buy puts when breaking support.
 2. **Implied Volatility (IV)**: Avoid buying high-IV contracts right before earnings to prevent IV crush.
-3. **Your Risk Standard**: Your current record shows an average win of ${metricsContext.avgWin} and average loss of ${metricsContext.avgLoss}. Keep position sizing capped at 2% of total capital per trade.`;
+3. **Your Risk Standard**: Your current record shows an average win of ${metricsContext.avgWin} and average loss of ${metricsContext.avgLoss}. Keep position sizing capped at 2% of total capital per trade.
+
+*⚠️ Disclaimer: Educational journal breakdown only; not investment advice.*`;
     } else if (qLower.includes('loss') || qLower.includes('leak') || qLower.includes('worst')) {
       fallbackText = `Based on your authenticated trading record:
 - **Total Trades**: ${metricsContext.totalTrades}

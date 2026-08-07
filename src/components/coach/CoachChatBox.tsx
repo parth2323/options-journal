@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { ChatMessage } from '@/lib/types';
-import { Bot, Send, User, Sparkles, RefreshCw, Zap } from 'lucide-react';
+import { Bot, Send, User, Sparkles, RefreshCw, Zap, ShieldAlert } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function CoachChatBox() {
@@ -190,6 +190,12 @@ export function CoachChatBox() {
             {prompt}
           </button>
         ))}
+      </div>
+
+      {/* Legal & Regulatory Risk Disclaimer Strip */}
+      <div className="px-3.5 py-1.5 bg-amber-500/10 border-t border-amber-500/20 text-[10px] text-amber-700 dark:text-amber-300 font-medium flex items-center gap-1.5 leading-tight flex-shrink-0">
+        <ShieldAlert className="w-3.5 h-3.5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
+        <span><strong>Educational Journaling Tool:</strong> AI Coach responses are for statistical reflection only. Not financial advice or trade signals. Options trading carries substantial risk of loss.</span>
       </div>
 
       {/* Input Form */}
