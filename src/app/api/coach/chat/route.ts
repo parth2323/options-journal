@@ -83,55 +83,113 @@ export async function POST(req: NextRequest) {
     const apiKey = process.env.DEEPSEEK_API_KEY;
 
     if (apiKey && apiKey.trim() !== '') {
-      const systemPrompt = `You are an elite, highly experienced US SPY/QQQ options trading coach. You give direct, quantitative, actionable, and encouraging feedback to traders.
-Strict Rule: Base your answers ONLY on the user's actual trading data provided below. Do not invent trades.
+      const systemPrompt = `You are an elite, highly experienced Wall Street Options & Stock Trading Coach and Financial Market Analyst.
+You provide direct, professional, educational, and actionable guidance to traders.
 
-LOGGED-IN USER'S EXCLUSIVE TRADING DATA:
+CAPABILITIES:
+1. USER PERFORMANCE ANALYSIS: You have access to the user's live authenticated trading journal data (metrics, win rate, PnL, recent trades). When the user asks about their performance, trades, win rate, or risk, reference their real data accurately.
+2. GENERAL MARKET & SECTOR ANALYSIS: When the user asks general market questions (such as sector picks like Energy, Tech, Healthcare, macro outlooks, options strategies like credit spreads, IV crush, delta/gamma risk), provide comprehensive, high-level market breakdown and educational insights. Note: Always include a brief disclaimer that insights are for educational purposes.
+
+USER'S AUTHENTICATED JOURNAL METRICS:
 ${JSON.stringify(metricsContext, null, 2)}`;
 
-      const deepseekRes = await fetch('https://api.deepseek.com/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model: 'deepseek-chat',
-          messages: [
-            { role: 'system', content: systemPrompt },
-            ...messages.slice(-8), // Keep last 8 messages for context
-          ],
-          temperature: 0.3,
-          max_tokens: 600,
-        }),
-      });
+      try {
+        const deepseekRes = await fetch('https://api.deepseek.com/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model: 'deepseek-chat',
+            messages: [
+              { role: 'system', content: systemPrompt },
+              ...messages.slice(-8), // Keep last 8 messages for context
+            ],
+            temperature: 0.5,
+            max_tokens: 800,
+          }),
+          signal: AbortSignal.timeout(10000), // 10s timeout
+        });
 
-      if (deepseekRes.ok) {
-        const aiData = await deepseekRes.json();
-        const responseText = aiData.choices?.[0]?.message?.content;
-        if (responseText) {
-          return NextResponse.json({ response: responseText });
+        if (deepseekRes.ok) {
+          const aiData = await deepseekRes.json();
+          const responseText = aiData.choices?.[0]?.message?.content;
+          if (responseText) {
+            return NextResponse.json({ response: responseText });
+          }
+        } else {
+          const errBody = await deepseekRes.text();
+          console.error('[DeepSeek API Error]:', deepseekRes.status, errBody);
         }
+      } catch (apiErr) {
+        console.error('[DeepSeek Fetch Error]:', apiErr);
       }
     }
 
-    // Smart algorithmic fallback if API key is not configured
-    let fallbackText = `Based on your authenticated trading record (${metricsContext.totalTrades} trade(s), ${metricsContext.winRate} win rate, Net PnL ${metricsContext.netPnl}): `;
-
+    // ── Smart Algorithmic Fallback Engine ─────────────────────────────────────
     const qLower = lastUserMessage.toLowerCase();
-    if (qLower.includes('loss') || qLower.includes('leak') || qLower.includes('worst')) {
-      fallbackText += `Your largest single loss reached ${metricsContext.largestLoss}. Your average loss is ${metricsContext.avgLoss}. The key action is setting a hard stop-loss cap at 1.5x average loss ($${(avgLoss * 1.5).toFixed(0)}) to protect your equity curve.`;
+    let fallbackText = '';
+
+    if (
+      qLower.includes('energy') ||
+      qLower.includes('sector') ||
+      qLower.includes('buy') ||
+      qLower.includes('stock') ||
+      qLower.includes('share') ||
+      qLower.includes('etf')
+    ) {
+      fallbackText = `In the Energy Sector (XLE), top market leaders include **ExxonMobil (XOM)** and **Chevron (CVX)** for large-cap stability, alongside high-beta E&P leaders like **ConocoPhillips (COP)** and **Devon Energy (DVN)**.
+
+When trading energy equities or options:
+1. **Watch Crude Oil (WTI / BRENT)**: Energy stocks move closely with crude futures and OPEC geopolitical catalysts.
+2. **Options Volatility**: Implied Volatility (IV) spikes during earnings and OPEC inventory releases.
+3. **Journal Context**: Based on your journal record (${metricsContext.totalTrades} trade(s), ${metricsContext.winRate} win rate, Net PnL ${metricsContext.netPnl}), ensure you test your setup on your Chart Observations board before opening live contracts!
+
+*(Educational breakdown only; not financial advice).*`;
+    } else if (
+      qLower.includes('option') ||
+      qLower.includes('call') ||
+      qLower.includes('put') ||
+      qLower.includes('spread') ||
+      qLower.includes('iv') ||
+      qLower.includes('delta')
+    ) {
+      fallbackText = `Options trading requires strict risk control and delta alignment:
+1. **Calls vs Puts**: Buy calls when expecting upward momentum above key resistance; buy puts when breaking support.
+2. **Implied Volatility (IV)**: Avoid buying high-IV contracts right before earnings to prevent IV crush.
+3. **Your Risk Standard**: Your current record shows an average win of ${metricsContext.avgWin} and average loss of ${metricsContext.avgLoss}. Keep position sizing capped at 2% of total capital per trade.`;
+    } else if (qLower.includes('loss') || qLower.includes('leak') || qLower.includes('worst')) {
+      fallbackText = `Based on your authenticated trading record:
+- **Total Trades**: ${metricsContext.totalTrades}
+- **Win Rate**: ${metricsContext.winRate}
+- **Largest Single Loss**: ${metricsContext.largestLoss}
+- **Average Loss**: ${metricsContext.avgLoss}
+
+To eliminate profit leaks, enforce a hard stop-loss cap at 1.5x average loss ($${(avgLoss * 1.5).toFixed(0)}) to protect your equity curve.`;
     } else if (qLower.includes('win') || qLower.includes('best') || qLower.includes('edge')) {
-      fallbackText += `Your average winning trade produces ${metricsContext.avgWin}, with your best win hitting ${metricsContext.largestWin}. You have strong execution when adhering to your pre-defined confluence tags!`;
+      fallbackText = `Your performance snapshot:
+- **Win Rate**: ${metricsContext.winRate} (${wins.length}W / ${losses.length}L)
+- **Net PnL**: ${metricsContext.netPnl}
+- **Average Win**: ${metricsContext.avgWin}
+- **Largest Win**: ${metricsContext.largestWin}
+
+Your best executions occur when you strictly follow your confluence rules before entering trades!`;
     } else if (qLower.includes('idea') || qLower.includes('chart') || qLower.includes('observation')) {
-      fallbackText += `You have logged ${metricsContext.chartObservationsCount} chart observation(s). Reviewing chart setups before placing live orders reduces impulse trades by up to 40%.`;
+      fallbackText = `You currently have **${metricsContext.chartObservationsCount} chart observation(s)** logged. Pre-planning setups on your Chart Ideas board before opening live options orders reduces impulse trades by up to 40%.`;
     } else {
-      fallbackText += `To maximize your edge, maintain consistent contract position sizing (average win: ${metricsContext.avgWin}, average loss: ${metricsContext.avgLoss}). What specific setup or trade would you like to break down next?`;
+      fallbackText = `Based on your authenticated trading record (${metricsContext.totalTrades} trade(s), ${metricsContext.winRate} win rate, Net PnL ${metricsContext.netPnl}):
+
+To maximize your edge:
+- **Position Sizing**: Maintain consistent contract sizing (Average win: ${metricsContext.avgWin}, Average loss: ${metricsContext.avgLoss}).
+- **Setup Execution**: Log all setup confluences before entry.
+
+What specific ticker, sector, or options setup would you like to break down next?`;
     }
 
     return NextResponse.json({ response: fallbackText });
   } catch (err) {
     console.error('[Coach Chat Error]:', err);
-    return NextResponse.json({ response: "I'm reviewing your trading history right now. Ask me any question about your risk, win rate, or SPY/QQQ setup selection!" }, { status: 200 });
+    return NextResponse.json({ response: "I'm reviewing your trading history and market data right now. Ask me any question about market sectors, options strategies, or your risk management!" }, { status: 200 });
   }
 }

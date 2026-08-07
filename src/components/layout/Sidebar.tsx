@@ -84,14 +84,15 @@ export function Sidebar() {
   const NavContent = () => (
     <>
       {/* Logo */}
-      <div className="flex items-center justify-between px-5 py-5 border-b border-slate-100 dark:border-[#2a2a2a]">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center flex-shrink-0 shadow-xs">
-            <TrendingUp className="w-4 h-4 text-white" />
+      <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-[#2a2a2a]">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl overflow-hidden shadow-md flex-shrink-0 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-center p-0.5">
+            <img src="/logo_light.png" alt="OptionIQ Logo" className="w-full h-full object-cover rounded-lg block dark:hidden" />
+            <img src="/logo.png" alt="OptionIQ Logo" className="w-full h-full object-cover rounded-lg hidden dark:block" />
           </div>
           <div>
-            <p className="text-sm font-extrabold text-slate-900 dark:text-[#e8e8e8] leading-tight">Options Journal</p>
-            <p className="text-[10px] text-slate-500 dark:text-[#737373] font-medium">Trading Tracker</p>
+            <p className="text-base font-black text-slate-900 dark:text-white leading-tight font-mono tracking-tight">OptionIQ</p>
+            <p className="text-[10px] text-indigo-600 dark:text-indigo-400 font-extrabold uppercase tracking-wider">AI Options Journal</p>
           </div>
         </div>
         <button

@@ -50,8 +50,29 @@ export function CoachChatBox() {
         }),
       });
 
-      if (!res.ok) throw new Error('Chat API returned error');
       const data = await res.json();
+
+      if (!res.ok) {
+        if (data.error === 'AI_ACCESS_REQUIRED') {
+          const unlockMsg: ChatMessage = {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: '🔑 Beta Access Code required to chat with AI Coach. Please click the "Unlock AI Coach" button at the top of this page to enter your access code.',
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          };
+          setMessages((prev) => [...prev, unlockMsg]);
+          return;
+        }
+
+        const errMsg: ChatMessage = {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: data.message || data.error || 'Unable to connect to AI Coach. Please try again.',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        };
+        setMessages((prev) => [...prev, errMsg]);
+        return;
+      }
 
       const aiMsg: ChatMessage = {
         id: crypto.randomUUID(),
@@ -63,13 +84,13 @@ export function CoachChatBox() {
       setMessages((prev) => [...prev, aiMsg]);
     } catch (err) {
       console.error('Coach Chat error:', err);
-      const fallbackMsg: ChatMessage = {
+      const networkMsg: ChatMessage = {
         id: crypto.randomUUID(),
         role: 'assistant',
-        content: "I've reviewed your Supabase trade log. Make sure to cut losses at 1.5x your average loss to protect your account equity curve!",
+        content: 'Connection error. Please check your network connection and try again.',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
-      setMessages((prev) => [...prev, fallbackMsg]);
+      setMessages((prev) => [...prev, networkMsg]);
     } finally {
       setSending(false);
     }
