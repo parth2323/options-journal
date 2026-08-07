@@ -91,8 +91,8 @@ export function Sidebar() {
             <img src="/logo.png" alt="OptionIQ Logo" className="w-full h-full object-cover rounded-lg hidden dark:block" />
           </div>
           <div>
-            <p className="text-base font-black text-slate-900 dark:text-white leading-tight font-mono tracking-tight">OptionIQ</p>
-            <p className="text-[10px] text-indigo-600 dark:text-indigo-400 font-extrabold uppercase tracking-wider">AI Options Journal</p>
+            <p className="text-base font-black text-slate-900 dark:text-white leading-tight font-mono tracking-tight">TradeVault</p>
+            <p className="text-[10px] text-indigo-600 dark:text-indigo-400 font-extrabold uppercase tracking-wider">Vault Your Trades</p>
           </div>
         </div>
         <button

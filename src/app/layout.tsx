@@ -7,8 +7,8 @@ import { QueryProvider } from "@/components/layout/QueryProvider";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "OptionIQ — AI-Powered Options Journal & Trading Tracker",
-  description: "Track your options trades, backtest performance, eliminate profit leaks, and unlock deep insights with AI mentorship.",
+  title: "TradeVault — Master Your Edge. Vault Your Trades.",
+  description: "Institutional options journal, AI mentorship, trade analytics, and automated risk tracking.",
 };
 
 export default function RootLayout({
