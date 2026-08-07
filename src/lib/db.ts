@@ -57,7 +57,8 @@ export async function createAccount(
 ): Promise<Account> {
   const sb = await getClient(client);
   const { data: { user } } = await sb.auth.getUser();
-  const userId = user?.id ?? data.user_id ?? 'local';
+  if (!user) throw new Error('Unauthenticated: User must be logged in to create an account');
+  const userId = user.id;
 
   const account: Account = {
     ...data,
@@ -141,7 +142,8 @@ export async function createTrade(
 ): Promise<Trade> {
   const sb = await getClient(client);
   const { data: { user } } = await sb.auth.getUser();
-  const userId = user?.id ?? data.user_id ?? 'local';
+  if (!user) throw new Error('Unauthenticated: User must be logged in to log trades');
+  const userId = user.id;
 
   const trade: Trade = {
     ...data,
@@ -245,7 +247,8 @@ export async function createConfluenceTag(
 ): Promise<ConfluenceTag> {
   const sb = await getClient(client);
   const { data: { user } } = await sb.auth.getUser();
-  const userId = user?.id ?? data.user_id ?? 'local';
+  if (!user) throw new Error('Unauthenticated: User must be logged in to create tags');
+  const userId = user.id;
 
   const tag: ConfluenceTag = {
     ...data,
@@ -448,7 +451,8 @@ export async function createObservation(
 ): Promise<ChartObservation> {
   const sb = await getClient(client);
   const { data: { user } } = await sb.auth.getUser();
-  const userId = user?.id ?? data.user_id ?? 'local';
+  if (!user) throw new Error('Unauthenticated: User must be logged in to save observations');
+  const userId = user.id;
 
   const observation: ChartObservation = {
     ...data,

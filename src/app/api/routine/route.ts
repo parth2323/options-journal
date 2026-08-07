@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getRoutine, updateRoutine } from '@/lib/db';
 import { getAuthenticatedUserId } from '@/lib/auth';
 
+import { createSupabaseServerClient } from '@/lib/supabase/server';
+
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
@@ -9,7 +11,8 @@ export async function GET() {
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
-    const routine = await getRoutine();
+    const supabase = await createSupabaseServerClient();
+    const routine = await getRoutine(supabase);
     return NextResponse.json(routine);
   } catch (error) {
     console.error('Error fetching routine:', error);
@@ -23,7 +26,8 @@ export async function PATCH(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const updated = await updateRoutine(body);
+    const supabase = await createSupabaseServerClient();
+    const updated = await updateRoutine(body, supabase);
     return NextResponse.json(updated);
   } catch (error) {
     console.error('Error updating routine:', error);

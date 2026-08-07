@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getTrades, getAccounts } from '@/lib/db';
 import { getAuthenticatedUserId } from '@/lib/auth';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,8 +9,9 @@ export async function GET() {
   const userId = await getAuthenticatedUserId();
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const trades = await getTrades();
-  const accounts = await getAccounts();
+  const supabase = await createSupabaseServerClient();
+  const trades = await getTrades(undefined, supabase);
+  const accounts = await getAccounts(supabase);
   const accountMap = new Map(accounts.map((a) => [a.id, a.name]));
 
   const headers = [

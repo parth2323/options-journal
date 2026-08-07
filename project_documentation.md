@@ -16,14 +16,11 @@
 4. [Authentication System & Security Hardening](#4-authentication-system--security-hardening)
 5. [Database Schema & RLS Policies (Supabase)](#5-database-schema--rls-policies-supabase)
 6. [Application Pages](#6-application-pages)
-7. [API Routes](#7-api-routes)
-8. [Component Library & Live Market Terminal](#8-component-library--live-market-terminal)
-9. [AI Trading Mentor (Coach)](#9-ai-trading-mentor-coach)
-10. [Data Layer & Utilities](#10-data-layer--utilities)
-11. [Analytics Engine](#11-analytics-engine)
-12. [User Workflow](#12-user-workflow)
-13. [Comprehensive Security Model & Audit Findings](#13-comprehensive-security-model--audit-findings)
-14. [Feature Roadmap](#14-feature-roadmap)
+7. [Component Library & Live Market Terminal](#7-component-library--live-market-terminal)
+8. [AI Trading Mentor (Coach)](#8-ai-trading-mentor-coach)
+9. [Legal & Regulatory Disclaimer Fencing](#9-legal--regulatory-disclaimer-fencing)
+10. [Data Layer & Multi-Tenant Isolation](#10-data-layer--multi-tenant-isolation)
+11. [Summary of Commits Since August 7, 2026 12:43 AM](#11-summary-of-commits-since-august-7-2026-1243-am)
 
 ---
 
@@ -34,6 +31,7 @@
 ### Core Value Propositions
 - **Accurate P&L Tracking** — Commission-aware net P&L computation with options contract multiplier support (100x).
 - **Dual-Intelligence AI Mentor** — Powered by DeepSeek LLM with live context of the user's isolated trade history, capable of analyzing personal win rates/leaks *and* answering general sector/options questions (e.g. Energy sector picks, IV crush, spreads).
+- **Hardened SEC/FINRA Legal Disclaimer Fencing** — Comprehensive educational disclaimers embedded across AI system prompts, chat interfaces, report pages, and market data widgets.
 - **FAANG-Grade Market Terminal & Live Ticker** — Real-time market quotes via Finnhub & Yahoo Finance, high-definition SVG chart with explicit numeric Y-axis price labels ($746.16, $684.20, $621.24, $558.28) and X-axis date/time labels (Aug 26, Oct 14, Dec 02, Jan 20, Feb 07), and active candle hover tracking.
 - **Custom Watchlist Ticker Preferences** — In **Settings > Account & Security**, traders can add/remove custom ticker symbols (`NVDA`, `AAPL`, `TSLA`, `AMD`, `BTC-USD`) or select 1-click quick presets (`Indices`, `Tech Leaders`, `Options Movers`).
 - **Performance Analytics Engine** — Heatmaps, streak tracking, hold-time distribution, session breakdowns, and symbol profit factor rankings.
@@ -141,7 +139,7 @@ trade-vault/
 │   │   ├── auth/callback/route.ts    # OAuth callback + Open Redirect sanitizer
 │   ├── components/
 │   │   ├── analytics/                # Performance Analytics (8 files)
-│   │   ├── coach/                    # AI Coach dashboard + CoachChatBox + CodeModal
+│   │   ├── coach/                    # AI Coach dashboard + CoachChatBox + CodeModal + Legal Disclaimer Strip
 │   │   ├── dashboard/                # Dashboard widgets (5 files)
 │   │   ├── feedback/                 # FeedbackModal component
 │   │   ├── layout/                   # Sidebar, ThemeToggle, QueryProvider
@@ -162,6 +160,8 @@ trade-vault/
 │   │       └── server.ts             # Server Supabase client (cookie-based)
 │   └── middleware.ts                 # Auth guard + route protection
 ├── public/                           # Static assets, logo.png, logo_light.png, sw.js
+├── scripts/
+│   └── purge_orphaned_data.ts        # Database script purging legacy 'local' test rows
 ├── package.json                      # "name": "trade-vault"
 ├── next.config.ts                    # Enterprise HTTP Security Headers
 └── .env.local                        # SUPABASE_URL, ANON_KEY, DEEPSEEK_API_KEY, FINNHUB_API_KEY, AI_BETA_ACCESS_CODE
@@ -176,11 +176,13 @@ trade-vault/
 - **Middleware Guard** (`src/middleware.ts`): Intercepts all incoming HTTP requests. Unauthenticated requests to protected pages are redirected to `/login?next=<path>`, and unauthenticated API calls return `401 Unauthorized`.
 - **Open Redirect Protection**: `/auth/callback/route.ts` runs `sanitizeRedirectPath()` to prevent open redirect vulnerabilities.
 
-### Security Hardening (Post-12:43 AM Commits)
-1. **Access Code Protection**: Removed hardcoded fallback credentials (`'SPYLONG2026$p'`) from all API endpoints (`/api/coach`, `/api/coach/chat`, `/api/coach/verify-code`). Verification now strictly checks `process.env.AI_BETA_ACCESS_CODE`.
-2. **Disabled Debug Endpoints**: Deactivated `/api/observations/debug` (returns 404).
-3. **Database Mutation Isolation**: Enforced explicit `.eq('user_id', user.id)` scoping across all database mutation helpers in `/src/lib/db.ts` (`updateAccount`, `deleteAccount`, `updateTrade`, `deleteTrade`, `updateObservation`, `deleteObservation`, `updateConfluenceTag`, `deleteConfluenceTag`).
-4. **Enterprise HTTP Security Headers**: Configured in `next.config.ts`:
+### Security Audit Hardening
+1. **Elimination of Unauthenticated Fallback IDs**: Updated database insertion functions (`createTrade`, `createAccount`, `createObservation`, `createConfluenceTag`) in `src/lib/db.ts` to strictly enforce `if (!user) throw new Error('Unauthenticated')`. Prevents inserting rows with fallback `'local'` or unverified user IDs.
+2. **Explicit Server Client Cookie Scoping**: All API routes (`/api/export`, `/api/stats`, `/api/routine`, `/api/tags`) instantiate `createSupabaseServerClient()` and explicitly pass cookie-authenticated server client instances down to database helpers.
+3. **Database Orphan Cleanup Script**: Executed `scripts/purge_orphaned_data.ts` to verify and purge any legacy test data saved under `user_id = 'local'`.
+4. **Access Code Protection**: Removed hardcoded fallback credentials (`'SPYLONG2026$p'`) from all API endpoints (`/api/coach`, `/api/coach/chat`, `/api/coach/verify-code`). Verification now strictly checks `process.env.AI_BETA_ACCESS_CODE`.
+5. **Disabled Debug Endpoints**: Deactivated `/api/observations/debug` (returns 404).
+6. **Enterprise HTTP Security Headers**: Configured in `next.config.ts`:
    - `X-Frame-Options: DENY` (Anti-Clickjacking)
    - `X-Content-Type-Options: nosniff` (Anti-MIME Sniffing)
    - `Strict-Transport-Security: max-age=31536000; includeSubDomains` (HSTS)
@@ -284,9 +286,9 @@ CREATE TABLE chart_observations (
 2. **Trades (`/trades`)** — Data table with searching, filtering, sorting, pagination, multi-select bulk operations, and CSV export.
 3. **Analytics (`/analytics`)** — Performance Analytics engine with Day-of-Week, Session, Heatmap, Hold-Time, Streaks, Symbol Rankings, and Commissions tabs.
 4. **Ideas (`/ideas`)** — Chart setups journal with mood filters, multi-screenshot upload, setup tags, and hypothetical trade outcome tracking.
-5. **Market (`/market`)** — Real-time Finnhub news feed and ForexFactory economic calendar with impact filters.
+5. **Market (`/market`)** — Real-time Finnhub news feed and ForexFactory economic calendar with impact filters and Market Data Disclaimer strip.
 6. **Routine (`/routine`)** — Interactive pre/post-market routine builder with live phase countdown timer and regime rules.
-7. **AI Coach (`/coach`)** — DeepSeek AI scoring dashboard, weakness analysis, action plan, and conversational AI mentor.
+7. **AI Coach (`/coach`)** — DeepSeek AI scoring dashboard, weakness analysis, action plan, conversational AI mentor, and mandatory Legal Disclaimer Box.
 8. **Calendar (`/calendar`)** — Monthly P&L calendar with daily net gains/losses and trade drawers.
 9. **Accounts (`/accounts`)** — Manage live and backtest trading accounts with progress bars toward balance goals.
 10. **Settings (`/settings`)** — Account & Security Center, Trader Identity, **Dashboard Watchlist Tickers Manager**, SPY Routine Defaults, Confluence Tag Manager, AI Coach Preferences, and Data Export/Deletion.
@@ -324,19 +326,33 @@ The AI Coach (`/api/coach/chat`) operates on a dual-intelligence model:
 
 ---
 
-## 9. Security Model & Compliance
+## 9. Legal & Regulatory Disclaimer Fencing
+
+To mitigate legal exposure under SEC / FINRA / FTC rules regarding automated AI trading commentary, TradeVault implements **multi-layered disclaimer fencing**:
+
+1. **AI LLM System Prompts**: Explicitly instruct DeepSeek LLM that it is an **educational trade journaling reflection tool**, not a registered investment advisor, and MUST NEVER provide buy/sell recommendations or guarantee profits.
+2. **AI Chat Interface**: Embedded `ShieldAlert` Legal Disclaimer Strip directly above the chat input box.
+3. **AI Coach Dashboard**: Permanent, styled Regulatory Risk Disclaimer Box rendered at the bottom of the AI Coach report.
+4. **Market Overview Page**: Dedicated Market Data Disclaimer strip at the bottom of `/market`.
+
+---
+
+## 10. Data Layer & Multi-Tenant Isolation
 
 - **Authentication Guard**: All API routes check Supabase session token via cookie middleware + explicit `getAuthenticatedUserId()` server check.
+- **Unauthenticated Insert Rejection**: Creation functions (`createTrade`, `createAccount`, `createObservation`, `createConfluenceTag`) throw `Unauthenticated` errors if `user` is null.
 - **Strict Data Isolation**: Queries and mutations explicitly include `.eq('user_id', user.id)` alongside Supabase RLS.
 - **HTTP Security Headers**: Enforced via `next.config.ts`.
 - **Passcode Protection**: AI Coach feature protected by `process.env.AI_BETA_ACCESS_CODE`.
 
 ---
 
-## 10. Summary of Commits Since August 7, 2026 12:43 AM
+## 11. Summary of Commits Since August 7, 2026 12:43 AM
 
 | Commit | Author | Description |
 |---|---|---|
+| `fbff845` | Parth Patel | **legal:** Add comprehensive SEC/FINRA regulatory risk disclaimers across AI Coach API, UI, and Market pages. |
+| `5b8d6f7` | Parth Patel | **docs:** Update TradeVault project documentation covering all features since Aug 7, 2026 12:43 AM. |
 | `fb9037e` | Parth Patel | **brand:** Update branding to TradeVault with official slogan *"Vault Your Trades"*. |
 | `85ab3f7` | Parth Patel | **brand:** Rebrand app with theme-adaptive Light Mode (`logo_light.png`) & Dark Mode (`logo.png`) 3D glassmorphic emblems. |
 | `5deac6c` | Parth Patel | **feat:** FAANG-grade Live Market Ticker & Interactive Terminal (`<TickerDetailModal />`), complete security hardening, custom watchlist ticker settings, and mobile responsive polish. |
