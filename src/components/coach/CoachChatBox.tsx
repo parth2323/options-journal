@@ -40,11 +40,13 @@ export function CoachChatBox() {
     setSending(true);
 
     try {
+      const savedCode = localStorage.getItem('options_journal_ai_code') || '';
       const res = await fetch('/api/coach/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: newMessages.map((m) => ({ role: m.role, content: m.content })),
+          accessCode: savedCode,
         }),
       });
 

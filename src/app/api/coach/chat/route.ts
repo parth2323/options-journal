@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getTrades, getAccounts, getObservations } from '@/lib/db';
+import { getTrades, getAccounts, getObservations, getUserProfile } from '@/lib/db';
 import { getAuthenticatedUserId } from '@/lib/auth';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { calculateAmountRisked, calculateRoiPercent, isEvaluatedTrade } from '@/lib/utils';
@@ -13,9 +13,32 @@ export async function POST(req: NextRequest) {
   const supabase = await createSupabaseServerClient();
 
   try {
+    // Protection Gate 0: Targeted Single-User Revocation
+    const userProfile = await getUserProfile(supabase);
+    if (userProfile?.ai_access_disabled === true) {
+      return NextResponse.json(
+        { error: 'AI_ACCESS_REVOKED', message: 'Your AI Coach access has been suspended by the platform administrator.' },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json();
     const messages = body.messages || [];
     const lastUserMessage = messages[messages.length - 1]?.content || '';
+
+    // Verify Beta Access Code
+    const envCode = process.env.AI_BETA_ACCESS_CODE
+      ? process.env.AI_BETA_ACCESS_CODE.replace(/^['"]|['"]$/g, '').trim()
+      : '';
+    const validCodes = ['SPYLONG2026$p', envCode].filter(Boolean);
+    const suppliedCode = (body.accessCode || '').trim();
+
+    if (!suppliedCode || !validCodes.includes(suppliedCode)) {
+      return NextResponse.json(
+        { error: 'AI_ACCESS_REQUIRED', message: 'Beta Access Code required to chat with AI Coach.' },
+        { status: 403 }
+      );
+    }
 
     // Fetch user-isolated trades and observations
     const [allTrades, observations] = await Promise.all([

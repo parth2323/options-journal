@@ -291,6 +291,7 @@ export interface UserProfile {
   preferred_timezone: string;
   preferred_currency: string;
   theme_preference: 'dark' | 'light' | 'system';
+  ai_access_disabled?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -298,7 +299,7 @@ export interface UserProfile {
 export interface SecurityAuditLog {
   id: string;
   user_id: string;
-  event_type: 'login' | 'password_change' | 'profile_update' | 'session_revoke' | 'password_reset_request';
+  event_type: 'login' | 'password_change' | 'profile_update' | 'session_revoke' | 'password_reset_request' | 'access_code_requested';
   description: string;
   ip_hint?: string;
   user_agent?: string;

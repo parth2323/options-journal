@@ -208,12 +208,25 @@ export default function LoginPage() {
       </Suspense>
 
       {/* Footer link */}
-      <div className="pt-2 text-center text-xs text-slate-500">
-        Don&apos;t have an account yet?{' '}
-        <Link href="/signup" className="font-bold text-indigo-400 hover:text-indigo-300 transition-colors">
-          Create Account
-        </Link>
+      <div className="pt-2 text-center text-xs text-slate-500 space-y-3">
+        <p>
+          Don&apos;t have an account yet?{' '}
+          <Link href="/signup" className="font-bold text-indigo-400 hover:text-indigo-300 transition-colors">
+            Create Account
+          </Link>
+        </p>
+
+        <div className="pt-3 border-t border-slate-800/80 flex items-center justify-center gap-3 text-[11px] text-slate-400 font-medium">
+          <Link href="/terms" target="_blank" className="hover:text-indigo-400 transition-colors">
+            Terms of Use
+          </Link>
+          <span>•</span>
+          <Link href="/privacy" target="_blank" className="hover:text-indigo-400 transition-colors">
+            Privacy Policy
+          </Link>
+        </div>
       </div>
     </div>
   );
 }
+

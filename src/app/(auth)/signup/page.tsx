@@ -271,12 +271,27 @@ export default function SignupPage() {
       </form>
 
       {/* Footer link */}
-      <div className="pt-1 text-center text-xs text-slate-500">
-        Already have an account?{' '}
-        <Link href="/login" className="font-bold text-indigo-400 hover:text-indigo-300 transition-colors">
-          Sign In
-        </Link>
+      <div className="pt-1 text-center text-xs text-slate-500 space-y-3">
+        <p>
+          Already have an account?{' '}
+          <Link href="/login" className="font-bold text-indigo-400 hover:text-indigo-300 transition-colors">
+            Sign In
+          </Link>
+        </p>
+
+        <p className="text-[11px] text-slate-500 leading-normal pt-2 border-t border-slate-800/80">
+          By registering, you agree to our{' '}
+          <Link href="/terms" target="_blank" className="text-indigo-400 hover:underline">
+            Terms of Use
+          </Link>{' '}
+          and{' '}
+          <Link href="/privacy" target="_blank" className="text-indigo-400 hover:underline">
+            Privacy Policy
+          </Link>
+          .
+        </p>
       </div>
     </div>
   );
 }
+

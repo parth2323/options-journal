@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getTrades, getAccounts, getObservations, getCoachPreferences } from '@/lib/db';
+import { getTrades, getAccounts, getObservations, getCoachPreferences, getUserProfile, checkAndIncrementAiQuota } from '@/lib/db';
 import { Trade, TimeframeOption, CoachReport, CoachMetricsSnapshot, CoachPreferences, DEFAULT_COACH_PREFS } from '@/lib/types';
 import { calculateAmountRisked, calculateRoiPercent, isEvaluatedTrade } from '@/lib/utils';
 import { getAuthenticatedUserId } from '@/lib/auth';
@@ -330,6 +330,47 @@ export async function POST(req: NextRequest) {
     if (skipAi) {
       const report = generateFallbackReport(timeframe, metrics, filteredTrades);
       return NextResponse.json(report);
+    }
+
+    // ── Protection Gate 0: Targeted Single-User Revocation ──────────────────────
+    const userProfile = await getUserProfile(supabase);
+    if (userProfile?.ai_access_disabled === true) {
+      return NextResponse.json(
+        {
+          error: 'AI_ACCESS_REVOKED',
+          message: 'Your AI Coach access has been suspended by the platform administrator.',
+        },
+        { status: 403 }
+      );
+    }
+
+    // ── Protection Gate 1: Access Code Verification ────────────────────────────
+    const envCode = process.env.AI_BETA_ACCESS_CODE
+      ? process.env.AI_BETA_ACCESS_CODE.replace(/^['"]|['"]$/g, '').trim()
+      : '';
+    const validCodes = ['SPYLONG2026$p', envCode].filter(Boolean);
+    const suppliedCode = (body.accessCode || '').trim();
+
+    if (!suppliedCode || !validCodes.includes(suppliedCode)) {
+      return NextResponse.json(
+        {
+          error: 'AI_ACCESS_REQUIRED',
+          message: 'Beta Access Code required to run DeepSeek AI Intelligence. Please unlock AI Coach.',
+        },
+        { status: 403 }
+      );
+    }
+
+    // ── Protection Gate 2: Daily Quota Check (Max 3 / Day) ────────────────────
+    const quota = await checkAndIncrementAiQuota(userId);
+    if (!quota.allowed) {
+      return NextResponse.json(
+        {
+          error: 'AI_QUOTA_EXCEEDED',
+          message: `Daily AI analysis limit reached (${quota.count}/${quota.maxLimit}). Your quota resets tomorrow at midnight.`,
+        },
+        { status: 429 }
+      );
     }
 
     const apiKey = process.env.DEEPSEEK_API_KEY;

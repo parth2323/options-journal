@@ -653,3 +653,42 @@ export async function logSecurityEvent(
   }
 }
 
+// ─── AI Daily Quota & Protection Rate Limiter ──────────────────────────────────
+
+const aiDailyUsageMap = new Map<string, { count: number; date: string }>();
+
+export async function checkAndIncrementAiQuota(userId: string): Promise<{
+  allowed: boolean;
+  remaining: number;
+  count: number;
+  maxLimit: number;
+}> {
+  const MAX_LIMIT = 3;
+  const today = new Date().toISOString().split('T')[0];
+  const userUsage = aiDailyUsageMap.get(userId);
+
+  if (!userUsage || userUsage.date !== today) {
+    aiDailyUsageMap.set(userId, { count: 1, date: today });
+    return { allowed: true, remaining: MAX_LIMIT - 1, count: 1, maxLimit: MAX_LIMIT };
+  }
+
+  if (userUsage.count >= MAX_LIMIT) {
+    return { allowed: false, remaining: 0, count: userUsage.count, maxLimit: MAX_LIMIT };
+  }
+
+  userUsage.count += 1;
+  aiDailyUsageMap.set(userId, userUsage);
+  return { allowed: true, remaining: MAX_LIMIT - userUsage.count, count: userUsage.count, maxLimit: MAX_LIMIT };
+}
+
+export function getAiQuotaStatus(userId: string): { count: number; remaining: number; maxLimit: number } {
+  const MAX_LIMIT = 3;
+  const today = new Date().toISOString().split('T')[0];
+  const userUsage = aiDailyUsageMap.get(userId);
+  if (!userUsage || userUsage.date !== today) {
+    return { count: 0, remaining: MAX_LIMIT, maxLimit: MAX_LIMIT };
+  }
+  return { count: userUsage.count, remaining: Math.max(0, MAX_LIMIT - userUsage.count), maxLimit: MAX_LIMIT };
+}
+
+

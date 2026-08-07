@@ -22,6 +22,12 @@ import {
   ArrowDownRight,
   ChevronDown,
   ChevronUp,
+  Lock,
+  Key,
+  Loader2,
+  X,
+  Mail,
+  Send,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { CoachChatBox } from './CoachChatBox';
@@ -67,16 +73,14 @@ function RadialScoreGauge({ score }: { score: number }) {
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-          <span className="text-2xl font-black font-mono tracking-tight" style={{ color }}>
+          <span className="text-2xl font-black font-mono tracking-tight text-slate-900 dark:text-white">
             {score}
           </span>
-          <span className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-            / 100
-          </span>
+          <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400">Score</span>
         </div>
       </div>
       <span
-        className="mt-2 text-[11px] font-black uppercase tracking-wider px-3 py-0.5 rounded-full border shadow-xs"
+        className="mt-2 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full border shadow-xs"
         style={{
           color,
           backgroundColor: `${color}15`,
@@ -131,13 +135,109 @@ export function CoachDashboard({ accounts }: CoachDashboardProps) {
   const [activeTab, setActiveTab] = useState<'overview' | 'strengths' | 'weaknesses' | 'patterns' | 'actionPlan'>('overview');
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
 
+  // AI Access Protection state
+  const [unlockModalOpen, setUnlockModalOpen] = useState(false);
+  const [accessCodeInput, setAccessCodeInput] = useState('');
+  const [verifyingCode, setVerifyingCode] = useState(false);
+  const [requestingCode, setRequestingCode] = useState(false);
+  const [aiUnlocked, setAiUnlocked] = useState(false);
+  const [modalFeedback, setModalFeedback] = useState<{ type: 'error' | 'success'; message: string } | null>(null);
+  const [quotaError, setQuotaError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const savedCode = localStorage.getItem('options_journal_ai_code');
+    if (savedCode) {
+      setAiUnlocked(true);
+    }
+  }, []);
+
+  const handleRequestCode = async () => {
+    setRequestingCode(true);
+    setModalFeedback(null);
+    try {
+      const res = await fetch('/api/coach/request-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setModalFeedback({
+          type: 'success',
+          message: `Request sent! Admin notified for ${data.fullName} (${data.email}).`,
+        });
+        toast.success('Access code request submitted to administrator!');
+      } else {
+        setModalFeedback({
+          type: 'error',
+          message: data.error || 'Failed to submit request.',
+        });
+      }
+    } catch {
+      setModalFeedback({
+        type: 'error',
+        message: 'Failed to submit request.',
+      });
+    } finally {
+      setRequestingCode(false);
+    }
+  };
+
+  const handleUnlockAi = async (codeToVerify = accessCodeInput) => {
+    if (!codeToVerify) return;
+    setVerifyingCode(true);
+    setModalFeedback(null);
+    try {
+      const res = await fetch('/api/coach/verify-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accessCode: codeToVerify }),
+      });
+      const data = await res.json();
+      if (res.ok && data.valid) {
+        setModalFeedback({
+          type: 'success',
+          message: 'Beta Access Code verified! Unlocking AI Coach...',
+        });
+        localStorage.setItem('options_journal_ai_code', codeToVerify);
+        setAiUnlocked(true);
+        setTimeout(() => {
+          setUnlockModalOpen(false);
+          setModalFeedback(null);
+          toast.success('AI Coach unlocked! Generating DeepSeek report...');
+          fetchReport(timeframe, selectedAccountId, true, codeToVerify);
+        }, 700);
+      } else {
+        setModalFeedback({
+          type: 'error',
+          message: data.error || 'Invalid Beta Access Code. Please check your password.',
+        });
+      }
+    } catch {
+      setModalFeedback({
+        type: 'error',
+        message: 'Verification failed. Please try again.',
+      });
+    } finally {
+      setVerifyingCode(false);
+    }
+  };
+
   const fetchReport = useCallback(
-    async (tf: TimeframeOption, accId?: string, runAi = false) => {
+    async (tf: TimeframeOption, accId?: string, runAi = false, codeOverride?: string) => {
+      const savedCode = codeOverride || localStorage.getItem('options_journal_ai_code') || '';
+
       if (runAi) {
+        if (!savedCode) {
+          setUnlockModalOpen(true);
+          return;
+        }
         setAiAnalyzing(true);
       } else {
         setLoading(true);
       }
+
+      setQuotaError(null);
+
       try {
         const res = await fetch('/api/coach', {
           method: 'POST',
@@ -146,14 +246,35 @@ export function CoachDashboard({ accounts }: CoachDashboardProps) {
             timeframe: tf,
             account_id: accId || undefined,
             skipAi: !runAi,
+            accessCode: savedCode,
           }),
         });
+
+        const data = await res.json();
+
+        if (res.status === 403) {
+          if (data.error === 'AI_ACCESS_REVOKED') {
+            setQuotaError(data.message || 'Your AI Coach access has been suspended by the platform administrator.');
+            return;
+          }
+          localStorage.removeItem('options_journal_ai_code');
+          setAiUnlocked(false);
+          setUnlockModalOpen(true);
+          toast.error(data.message || 'Beta Access Code required');
+          return;
+        }
+
+        if (res.status === 429) {
+          setQuotaError(data.message || 'Daily AI analysis limit reached (3/3). Your quota resets tomorrow at midnight.');
+          return;
+        }
+
         if (!res.ok) throw new Error('Failed to fetch coach feedback');
-        const data: CoachReport = await res.json();
+
         setReport(data);
         if (runAi) {
           setIsAiGenerated(true);
-          toast.success('DeepSeek AI analysis completed on Supabase trade history!');
+          toast.success('DeepSeek AI analysis completed!');
         }
       } catch (err) {
         console.error('Error fetching AI Coach analysis:', err);
@@ -179,6 +300,30 @@ export function CoachDashboard({ accounts }: CoachDashboardProps) {
 
   return (
     <div className="space-y-6">
+      {/* ── TOP QUOTA LIMIT ALERT BANNER BOX ────────────────────────────────── */}
+      {quotaError && (
+        <div className="bg-gradient-to-r from-red-500/10 via-amber-500/10 to-red-500/10 border border-red-500/30 rounded-2xl p-4 shadow-md flex items-center justify-between gap-4 animate-in fade-in slide-in-from-top-3 duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-red-500/20 border border-red-500/30 text-red-400 flex items-center justify-center flex-shrink-0">
+              <ShieldAlert className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+                Daily AI Quota Reached (3/3 Reports Used)
+              </h4>
+              <p className="text-xs text-slate-600 dark:text-slate-300 font-medium mt-0.5">
+                {quotaError}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setQuotaError(null)}
+            className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/40 transition-all flex-shrink-0"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
       {/* ── Top Header Controls ──────────────────────────────────────────────── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gray-50 dark:bg-[#12121a] border border-gray-200 dark:border-[#1e1e2d] rounded-2xl p-4 shadow-sm">
         <div>
@@ -680,6 +825,107 @@ export function CoachDashboard({ accounts }: CoachDashboardProps) {
       <div className="pt-4">
         <CoachChatBox />
       </div>
+
+      {/* ── UNLOCK BETA ACCESS CODE MODAL ────────────────────────────────────── */}
+      {unlockModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md">
+          <div className="bg-white dark:bg-[#12121a] border border-slate-200 dark:border-[#1e1e2d] rounded-2xl max-w-md w-full p-6 space-y-5 shadow-2xl relative">
+            <button
+              onClick={() => setUnlockModalOpen(false)}
+              className="absolute right-4 top-4 text-slate-400 hover:text-white transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-500 flex items-center justify-center flex-shrink-0">
+                <Lock className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-slate-900 dark:text-white">
+                  Unlock AI Coach Early Access
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                  Enter your Beta Access Code to activate DeepSeek Intelligence.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2 bg-slate-50 dark:bg-[#161622] p-4 rounded-xl border border-slate-200 dark:border-[#1e1e2d]">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <Key className="w-3.5 h-3.5 text-indigo-500" />
+                Beta Access Password
+              </label>
+              <input
+                type="password"
+                value={accessCodeInput}
+                onChange={(e) => {
+                  setAccessCodeInput(e.target.value);
+                  if (modalFeedback) setModalFeedback(null);
+                }}
+                onKeyDown={(e) => e.key === 'Enter' && handleUnlockAi()}
+                placeholder="Enter Beta Code (e.g. ABC123)"
+                className="w-full bg-white dark:bg-[#12121a] border border-slate-200 dark:border-[#2a2a3e] text-slate-900 dark:text-white text-xs font-mono font-bold rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500 transition-all"
+              />
+
+              {/* Inline Modal Red Error / Green Success Banner */}
+              {modalFeedback && (
+                <div
+                  className={cn(
+                    'p-2.5 rounded-xl border text-xs font-bold flex items-center gap-2 transition-all animate-in fade-in zoom-in-95',
+                    modalFeedback.type === 'error'
+                      ? 'bg-red-500/10 border-red-500/30 text-red-500 dark:text-red-400'
+                      : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
+                  )}
+                >
+                  {modalFeedback.type === 'error' ? (
+                    <AlertTriangle className="w-4 h-4 flex-shrink-0 text-red-500" />
+                  ) : (
+                    <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-emerald-500" />
+                  )}
+                  <span>{modalFeedback.message}</span>
+                </div>
+              )}
+
+              <p className="text-[10px] text-slate-400 font-medium pt-1">
+                🛡️ Enforces 100% token cost protection & 3 AI reports/day rate limit.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-[#1e1e2d]">
+              <button
+                type="button"
+                onClick={handleRequestCode}
+                disabled={requestingCode}
+                className="flex items-center gap-1.5 px-3 py-2 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/10 text-xs font-bold rounded-xl transition-all border border-indigo-500/20 cursor-pointer disabled:opacity-50"
+              >
+                {requestingCode ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
+                Request Passcode
+              </button>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setUnlockModalOpen(false)}
+                  className="px-3.5 py-2 bg-slate-100 dark:bg-[#1f1f2e] text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl hover:bg-slate-200 transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleUnlockAi()}
+                  disabled={verifyingCode || !accessCodeInput}
+                  className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-black px-4 py-2 rounded-xl transition-all shadow-md cursor-pointer"
+                >
+                  {verifyingCode ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Lock className="w-3.5 h-3.5" />}
+                  Unlock AI Coach
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+

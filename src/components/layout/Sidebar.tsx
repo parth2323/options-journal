@@ -153,6 +153,18 @@ export function Sidebar() {
             </div>
           </div>
         )}
+
+        <div className="pt-2 border-t border-slate-100 dark:border-[#252525] flex items-center justify-center gap-2 text-[10px] text-slate-600 dark:text-slate-400 font-semibold">
+          <Link href="/terms" target="_blank" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+            Terms
+          </Link>
+          <span>•</span>
+          <Link href="/privacy" target="_blank" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+            Privacy
+          </Link>
+          <span>•</span>
+          <span className="text-slate-500 dark:text-slate-400">Beta v1.0</span>
+        </div>
       </div>
     </>
   );
