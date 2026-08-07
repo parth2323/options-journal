@@ -30,7 +30,13 @@ async function getClient(customClient?: SupabaseClient): Promise<SupabaseClient>
 export async function getAccounts(client?: SupabaseClient): Promise<Account[]> {
   try {
     const sb = await getClient(client);
-    const res = await withTimeout(sb.from('accounts').select('*').order('created_at', { ascending: true }), 3000);
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return [];
+
+    const res = await withTimeout(
+      sb.from('accounts').select('*').eq('user_id', user.id).order('created_at', { ascending: true }),
+      3000
+    );
     if (!res.error && res.data) {
       return res.data as Account[];
     }
@@ -93,7 +99,10 @@ export async function deleteAccount(id: string, client?: SupabaseClient): Promis
 export async function getTrades(accountId?: string, client?: SupabaseClient): Promise<Trade[]> {
   try {
     const sb = await getClient(client);
-    let query = sb.from('trades').select('*').order('opened_at', { ascending: false });
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return [];
+
+    let query = sb.from('trades').select('*').eq('user_id', user.id).order('opened_at', { ascending: false });
     if (accountId) {
       query = query.eq('account_id', accountId);
     }
@@ -109,7 +118,13 @@ export async function getTrades(accountId?: string, client?: SupabaseClient): Pr
 
 export async function getTrade(id: string, client?: SupabaseClient): Promise<Trade | undefined> {
   const sb = await getClient(client);
-  const res = await withTimeout(sb.from('trades').select('*').eq('id', id).single(), 3000);
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) return undefined;
+
+  const res = await withTimeout(
+    sb.from('trades').select('*').eq('id', id).eq('user_id', user.id).single(),
+    3000
+  );
   if (!res.error && res.data) return res.data as Trade;
   return undefined;
 }
@@ -196,7 +211,13 @@ export async function deleteTrade(id: string, client?: SupabaseClient): Promise<
 export async function getConfluenceTags(client?: SupabaseClient): Promise<ConfluenceTag[]> {
   try {
     const sb = await getClient(client);
-    const res = await withTimeout(sb.from('confluence_tags').select('*').order('created_at', { ascending: true }), 3000);
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return [];
+
+    const res = await withTimeout(
+      sb.from('confluence_tags').select('*').eq('user_id', user.id).order('created_at', { ascending: true }),
+      3000
+    );
     if (!res.error && res.data) {
       return res.data as ConfluenceTag[];
     }
@@ -382,8 +403,11 @@ export async function updateRoutine(data: RoutineData, client?: SupabaseClient):
 export async function getObservations(client?: SupabaseClient): Promise<ChartObservation[]> {
   try {
     const sb = await getClient(client);
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return [];
+
     const res = await withTimeout(
-      sb.from('chart_observations').select('*').order('observed_at', { ascending: false }),
+      sb.from('chart_observations').select('*').eq('user_id', user.id).order('observed_at', { ascending: false }),
       3000
     );
     if (!res.error && res.data) {

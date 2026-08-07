@@ -22,6 +22,8 @@ import {
   Check,
   Search,
   X,
+  Plus,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { TradeDrawer } from './TradeDrawer';
 
@@ -277,8 +279,22 @@ export function TradesTable({ trades, accounts }: TradesTableProps) {
       {/* ── Mobile View: Stack Cards ─────────────── */}
       <div className="md:hidden space-y-3">
         {sorted.length === 0 ? (
-          <div className="p-8 text-center bg-[#0a0a0f] border border-[#1a1a28] rounded-2xl">
-            <p className="text-sm text-[#737373]">No trades found</p>
+          <div className="p-8 text-center bg-[#0a0a0f] border border-[#1a1a28] rounded-2xl space-y-3">
+            <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mx-auto">
+              <FileSpreadsheet className="w-6 h-6" />
+            </div>
+            <div>
+              <h4 className="text-sm font-black text-white">No Trades Logged Yet</h4>
+              <p className="text-xs text-[#737373] mt-1 max-w-xs mx-auto">
+                Log your first trade to activate equity curves, analytics, and AI coaching.
+              </p>
+            </div>
+            <Link
+              href="/trades/new"
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-black transition-all shadow-md"
+            >
+              <Plus className="w-4 h-4" /> Log First Trade
+            </Link>
           </div>
         ) : (
           sorted.map((trade) => (
@@ -331,7 +347,6 @@ export function TradesTable({ trades, accounts }: TradesTableProps) {
               <TH label="Gross PnL" field="gross_pnl" className="w-[11%] text-right" />
               <TH label="Comm" field="commission" className="w-[9%] text-right" />
               <TH label="Net PnL" field="net_pnl" className="w-[12%] text-right" />
-              <TH label="% Risk" field="percent_risk" className="w-[7%] text-right" />
               <TH label="Result" field="result" className="w-[10%] text-center" />
               <th className="px-3 py-3 w-[4%]" />
             </tr>
@@ -339,11 +354,26 @@ export function TradesTable({ trades, accounts }: TradesTableProps) {
           <tbody className="divide-y divide-[#1f1f1f]">
             {sorted.length === 0 ? (
               <tr>
-                <td colSpan={9} className="px-4 py-16 text-center">
-                  <p className="text-[#737373] mb-2 text-sm">No matching trades found</p>
-                  <Link href="/trades/new" className="text-indigo-400 hover:underline text-xs font-semibold">
-                    Add new trade →
-                  </Link>
+                <td colSpan={8} className="px-4 py-16 text-center">
+                  <div className="max-w-md mx-auto space-y-3">
+                    <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mx-auto shadow-md">
+                      <FileSpreadsheet className="w-7 h-7" />
+                    </div>
+                    <div>
+                      <h4 className="text-base font-black text-white">No Trading Data Found</h4>
+                      <p className="text-xs text-[#737373] font-medium mt-1 leading-relaxed">
+                        Log your first options trade to start tracking P&L, win rate, expectancy, and AI mentor feedback.
+                      </p>
+                    </div>
+                    <div className="pt-2">
+                      <Link
+                        href="/trades/new"
+                        className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black px-5 py-2.5 rounded-xl transition-all shadow-md cursor-pointer"
+                      >
+                        <Plus className="w-4 h-4" /> Log Your First Trade
+                      </Link>
+                    </div>
+                  </div>
                 </td>
               </tr>
             ) : (
