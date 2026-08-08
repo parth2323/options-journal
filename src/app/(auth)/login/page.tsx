@@ -10,9 +10,11 @@ import { toast } from 'sonner';
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get('next') ?? '/';
+  const next = searchParams.get('next') ?? '/dashboard';
+  const registered = searchParams.get('registered') === 'true';
+  const initialEmail = searchParams.get('email') ?? '';
 
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -56,14 +58,36 @@ function LoginForm() {
       });
 
       if (error) {
-        setErrorMessage('Invalid email or password.');
-        toast.error('Sign in failed. Check your credentials.');
+        const msg = error.message || '';
+        const code = error.code || '';
+
+        if (
+          code === 'email_not_confirmed' ||
+          msg.toLowerCase().includes('email not confirmed') ||
+          msg.toLowerCase().includes('unconfirmed') ||
+          msg.toLowerCase().includes('not confirmed') ||
+          msg.toLowerCase().includes('verify your email')
+        ) {
+          setErrorMessage('Please verify your email address before logging in. Check your inbox (and spam folder) for the confirmation link.');
+          toast.error('Email not verified. Please check your inbox.');
+        } else if (
+          code === 'invalid_credentials' ||
+          msg.toLowerCase().includes('invalid login credentials') ||
+          msg.toLowerCase().includes('invalid credentials')
+        ) {
+          setErrorMessage('Invalid email or password.');
+          toast.error('Sign in failed. Check your credentials.');
+        } else {
+          setErrorMessage(msg);
+          toast.error(msg);
+        }
         setLoading(false);
         return;
       }
 
       toast.success('Welcome back! 👋');
-      router.push(next);
+      const target = (!next || next === '/') ? '/dashboard' : next;
+      router.push(target);
       router.refresh();
     } catch {
       setErrorMessage('An unexpected error occurred. Please try again.');
@@ -107,6 +131,18 @@ function LoginForm() {
           or sign in with email
         </span>
       </div>
+
+      {registered && (
+        <div className="bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 text-xs font-semibold p-3.5 rounded-xl space-y-1">
+          <div className="flex items-center gap-2 font-bold text-indigo-200 text-sm">
+            <Mail className="w-4 h-4 text-indigo-400 flex-shrink-0" />
+            Verification Link Sent!
+          </div>
+          <p className="text-slate-300 text-xs font-normal leading-relaxed">
+            Account created! We&apos;ve sent a verification link to <span className="font-bold text-white">{email || initialEmail || 'your email'}</span>. Please check your inbox and verify your email before logging in.
+          </p>
+        </div>
+      )}
 
       <form onSubmit={handleLogin} className="space-y-4">
         {errorMessage && (
@@ -188,13 +224,11 @@ export default function LoginPage() {
     <div className="bg-[#0e1017]/90 backdrop-blur-xl border border-slate-800/90 rounded-3xl p-7 sm:p-8 shadow-2xl space-y-6">
       {/* Brand Header */}
       <div className="text-center space-y-2">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 mb-1">
-          <TrendingUp className="w-6 h-6" />
+        <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl overflow-hidden border border-slate-800 p-0.5 mb-1 bg-white/5">
+          <img src="/logo.png" alt="TradeVault Logo" className="w-full h-full object-cover rounded-lg" />
         </div>
-        <h1 className="text-2xl font-black tracking-tight text-white">Options Journal</h1>
-        <p className="text-xs text-slate-400 font-medium">
-          Sign in to access your isolated trading portfolio
-        </p>
+        <h1 className="text-xl font-black tracking-tight text-white font-mono">TradeVault</h1>
+        <p className="text-xs text-indigo-400 font-bold uppercase tracking-wider">Options Journal</p>
       </div>
 
       <Suspense

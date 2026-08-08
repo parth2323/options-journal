@@ -38,6 +38,25 @@ export async function getAccounts(client?: SupabaseClient): Promise<Account[]> {
       3000
     );
     if (!res.error && res.data) {
+      if (res.data.length === 0) {
+        try {
+          const defaultAccount: Account = {
+            id: crypto.randomUUID(),
+            user_id: user.id,
+            name: 'Primary Live Account',
+            account_type: 'live',
+            initial_balance: 10000,
+            goal: 25000,
+            created_at: new Date().toISOString(),
+          };
+          const created = await sb.from('accounts').insert(defaultAccount).select().single();
+          if (!created.error && created.data) {
+            return [created.data as Account];
+          }
+        } catch (initErr) {
+          console.error('[getAccounts] Auto-create account failed:', initErr);
+        }
+      }
       return res.data as Account[];
     }
   } catch (err) {

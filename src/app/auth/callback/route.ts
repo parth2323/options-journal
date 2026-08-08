@@ -9,16 +9,16 @@ import { NextResponse } from 'next/server';
  * to redirect victims to an external domain (open redirect prevention).
  */
 function sanitizeRedirectPath(next: string | null): string {
-  if (!next) return '/';
+  if (!next || next === '/') return '/dashboard';
 
   // Only allow relative paths — must start with exactly one slash and NOT be //domain or https://
   if (!next.startsWith('/') || next.startsWith('//') || next.includes('://')) {
-    return '/';
+    return '/dashboard';
   }
 
   // Reject null bytes, backslashes, and other control chars
   if (/[\x00\\\r\n]/.test(next)) {
-    return '/';
+    return '/dashboard';
   }
 
   return next;

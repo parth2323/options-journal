@@ -1,14 +1,16 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
-import { TrendingUp, Lock, Mail, User, Eye, EyeOff, Loader2, CheckCircle2 } from 'lucide-react';
+import { TrendingUp, Lock, Mail, User, Eye, EyeOff, Loader2, CheckCircle2, ShieldCheck, ArrowRight, RefreshCw, X } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function SignupPage() {
+function SignupContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isPreview = searchParams.get('preview') === 'modal' || searchParams.get('preview') === 'true';
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -18,11 +20,47 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
+  // Email verification modal state
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState('');
+  const [resending, setResending] = useState(false);
+
+  useEffect(() => {
+    if (isPreview) {
+      setRegisteredEmail('trader.demo@example.com');
+      setShowVerificationModal(true);
+    }
+  }, [isPreview]);
+
   // Password validation criteria
   const hasMinLength = password.length >= 8;
   const hasNumber = /\d/.test(password);
   const hasUpper = /[A-Z]/.test(password);
   const isPasswordValid = hasMinLength && hasNumber && hasUpper;
+
+  const handleResendEmail = async () => {
+    if (!registeredEmail) return;
+    setResending(true);
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: registeredEmail,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+        },
+      });
+      if (error) {
+        toast.error(error.message);
+      } else {
+        toast.success('Verification link resent! Check your inbox.');
+      }
+    } catch {
+      toast.error('Failed to resend verification email.');
+    } finally {
+      setResending(false);
+    }
+  };
 
   const handleGoogleAuth = async () => {
     setLoading(true);
@@ -75,6 +113,7 @@ export default function SignupPage() {
           data: {
             full_name: fullName.trim(),
           },
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
         },
       });
 
@@ -86,25 +125,32 @@ export default function SignupPage() {
       }
 
       if (data.user) {
-        // Create initial default trading account for new user via API
-        try {
-          await fetch('/api/accounts', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              name: 'Primary Live Account',
-              account_type: 'live',
-              initial_balance: 10000,
-              goal: 25000,
-            }),
-          });
-        } catch {
-          // Account creation warning ignored, user can create manually
-        }
+        if (!data.session) {
+          // Email confirmation is required by Supabase configuration -> Open Security Modal
+          setRegisteredEmail(email.trim());
+          setLoading(false);
+          setShowVerificationModal(true);
+        } else {
+          // Session is active immediately (email confirmation disabled)
+          try {
+            await fetch('/api/accounts', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                name: 'Primary Live Account',
+                account_type: 'live',
+                initial_balance: 10000,
+                goal: 25000,
+              }),
+            });
+          } catch {
+            // Account creation warning ignored, user can create manually
+          }
 
-        toast.success('Account created! Welcome to Options Journal 🎉');
-        router.push('/');
-        router.refresh();
+          toast.success('Account created! Welcome to Options Journal 🎉');
+          router.push('/dashboard');
+          router.refresh();
+        }
       }
     } catch {
       setErrorMessage('An unexpected error occurred during registration.');
@@ -116,13 +162,11 @@ export default function SignupPage() {
     <div className="bg-[#0e1017]/90 backdrop-blur-xl border border-slate-800/90 rounded-3xl p-7 sm:p-8 shadow-2xl space-y-5">
       {/* Brand Header */}
       <div className="text-center space-y-2">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 mb-1">
-          <TrendingUp className="w-6 h-6" />
+        <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl overflow-hidden border border-slate-800 p-0.5 mb-1 bg-white/5">
+          <img src="/logo.png" alt="TradeVault Logo" className="w-full h-full object-cover rounded-lg" />
         </div>
-        <h1 className="text-2xl font-black tracking-tight text-white">Create Account</h1>
-        <p className="text-xs text-slate-400 font-medium">
-          Start journaling with complete data privacy
-        </p>
+        <h1 className="text-xl font-black tracking-tight text-white font-mono">TradeVault</h1>
+        <p className="text-xs text-indigo-400 font-bold uppercase tracking-wider">Options Journal</p>
       </div>
 
       {/* Google OAuth Quick Sign Up */}
@@ -291,7 +335,145 @@ export default function SignupPage() {
           .
         </p>
       </div>
+
+      {/* Refined FAANG-Style Email Verification Security Modal */}
+      {showVerificationModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="relative w-full max-w-md bg-[#09090b] border border-zinc-800 rounded-3xl p-6 sm:p-7 shadow-2xl space-y-6 overflow-hidden text-left">
+            
+            {/* Close Button */}
+            <button
+              type="button"
+              onClick={() => setShowVerificationModal(false)}
+              className="absolute top-4 right-4 p-1.5 rounded-xl text-zinc-500 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
+              title="Close modal"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            {/* Brand Header */}
+            <div className="flex items-center gap-2.5">
+              <div className="w-6 h-6 rounded-lg overflow-hidden border border-zinc-700 flex-shrink-0">
+                <img src="/logo.png" alt="TradeVault" className="w-full h-full object-cover" />
+              </div>
+              <span className="text-xs font-bold text-zinc-300 font-mono tracking-tight">TradeVault — Options Journal</span>
+            </div>
+
+            {/* Hero Icon & Title */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="w-9 h-9 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-200 flex items-center justify-center">
+                  <Mail className="w-4 h-4" />
+                </div>
+                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider bg-zinc-900 border border-zinc-800 px-2.5 py-1 rounded-full">
+                  Action Required
+                </span>
+              </div>
+              <div>
+                <h2 className="text-xl font-extrabold text-white tracking-tight">Verify your email address</h2>
+                <p className="text-xs text-zinc-400 mt-1">
+                  Confirmation link dispatched to: <span className="font-mono font-bold text-zinc-200">{registeredEmail}</span>
+                </p>
+              </div>
+            </div>
+
+            {/* Email Inbox Skeleton Preview Card */}
+            <div className="space-y-1.5 text-left">
+              <div className="flex items-center justify-between px-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Email Preview (In Your Inbox)</span>
+                <span className="text-[10px] font-medium text-zinc-500">Look for this email</span>
+              </div>
+
+              <div className="bg-zinc-900/90 border border-zinc-800 rounded-2xl overflow-hidden shadow-inner">
+                {/* Header Bar */}
+                <div className="bg-zinc-950/90 border-b border-zinc-800/80 px-3.5 py-2.5 flex items-center justify-between text-[11px]">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="w-5 h-5 rounded-full bg-indigo-500/20 text-indigo-400 font-bold text-[10px] flex items-center justify-center flex-shrink-0">
+                      S
+                    </div>
+                    <div className="min-w-0 truncate">
+                      <span className="font-bold text-zinc-200">Supabase Auth</span>{' '}
+                      <span className="text-zinc-500 text-[10px] font-mono">&lt;noreply@mail.app.supabase.io&gt;</span>
+                    </div>
+                  </div>
+                  <span className="text-[10px] text-zinc-500 font-mono flex-shrink-0">Just now</span>
+                </div>
+
+                {/* Body Content Preview */}
+                <div className="p-4 bg-zinc-950/40 space-y-2.5">
+                  <div className="flex items-center justify-between border-b border-zinc-800/60 pb-2">
+                    <p className="text-xs font-bold text-white">Subject: Confirm your email address</p>
+                    <span className="text-[9px] font-bold text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-1.5 py-0.5 rounded">Inbox</span>
+                  </div>
+
+                  <div className="bg-zinc-900/60 border border-zinc-800/60 rounded-xl p-3 space-y-2">
+                    <p className="text-xs font-bold text-zinc-200">Confirm your email address</p>
+                    <p className="text-[11px] text-zinc-400 leading-normal">
+                      Follow the link below to confirm this email address and finish signing up.
+                    </p>
+                    <div className="pt-1">
+                      <span className="inline-flex items-center gap-1 text-xs font-bold text-indigo-400 underline decoration-indigo-400/60">
+                        Confirm email address →
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Security Notice */}
+            <div className="bg-zinc-900/50 border border-zinc-800/70 rounded-xl p-3 flex items-start gap-2 text-[11px] text-zinc-400">
+              <ShieldCheck className="w-4 h-4 text-zinc-400 flex-shrink-0 mt-0.5" />
+              <p className="leading-normal">
+                Email verification safeguards portfolio privacy and protects your trade records from unauthorized access.
+              </p>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="space-y-2.5 pt-1">
+              <button
+                type="button"
+                onClick={() => router.push(`/login?registered=true&email=${encodeURIComponent(registeredEmail)}`)}
+                className="w-full bg-white hover:bg-zinc-200 text-zinc-950 font-bold py-3 px-4 rounded-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2 text-xs cursor-pointer shadow-md"
+              >
+                Proceed to Sign In <ArrowRight className="w-4 h-4" />
+              </button>
+
+              <button
+                type="button"
+                onClick={handleResendEmail}
+                disabled={resending}
+                className="w-full bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white font-semibold py-2.5 px-4 rounded-xl border border-zinc-800 transition-colors flex items-center justify-center gap-2 text-xs cursor-pointer disabled:opacity-50"
+              >
+                {resending ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-zinc-400" /> Resending email...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 text-zinc-400" /> Resend verification link
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="py-8 flex justify-center text-slate-500">
+          <Loader2 className="w-6 h-6 animate-spin" />
+        </div>
+      }
+    >
+      <SignupContent />
+    </Suspense>
   );
 }
 
