@@ -3,345 +3,390 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import {
-  Sparkles,
-  BarChart3,
-  TrendingUp,
-  CalendarDays,
-  Lightbulb,
-  Clock,
-  Shield,
-  Zap,
-  ChevronRight,
   ArrowRight,
   CheckCircle2,
+  TrendingDown,
+  Brain,
+  BarChart3,
+  BookOpen,
   Activity,
+  Shield,
+  AlertTriangle,
+  ChevronRight,
 } from 'lucide-react';
 
-/* ─── Feature Cards Data ──────────────────────────────────────────── */
+/* ─────────────────────────── Data ──────────────────────────────────── */
+
 const features = [
   {
-    icon: Sparkles,
-    gradient: 'from-indigo-500 to-purple-600',
-    glow: 'shadow-indigo-500/25',
+    icon: Brain,
     title: 'AI Trading Coach',
     description:
-      'DeepSeek-powered dual-intelligence mentor analyzes your personal trade history — win rate, behavioral leaks, drawdown patterns — and answers sector/options questions in real time.',
-    badge: 'Powered by AI',
+      'DeepSeek-powered coaching that reads your actual trade history — win rate, session patterns, behavioral leaks — and builds a concrete improvement plan from your data.',
   },
   {
     icon: BarChart3,
-    gradient: 'from-cyan-500 to-indigo-600',
-    glow: 'shadow-cyan-500/25',
-    title: 'Performance Analytics Engine',
+    title: 'Performance Analytics',
     description:
-      'Day-of-week heatmaps, session breakdowns, streak tracking, hold-time distribution, symbol profit factor rankings, and commissions analysis — all built from your own trade data.',
-    badge: 'FAANG-Grade',
+      'Day-of-week heatmaps, session breakdowns, streak tracking, hold-time distribution, symbol P&L rankings. Institutional-grade statistics from your personal trade log.',
   },
   {
     icon: Activity,
-    gradient: 'from-emerald-500 to-cyan-600',
-    glow: 'shadow-emerald-500/25',
     title: 'Live Market Terminal',
     description:
-      'Real-time Finnhub & Yahoo Finance quotes with an HD SVG price chart, 52-week range slider, YTD return, volume, and 1-click "Log Trade" or "Add Observation" CTAs.',
-    badge: 'Real-Time',
+      "Real-time Finnhub & Yahoo Finance quotes, HD price charts, 52-week ranges, and one-click trade entry from any symbol you're watching.",
   },
   {
-    icon: CalendarDays,
-    gradient: 'from-amber-500 to-orange-600',
-    glow: 'shadow-amber-500/25',
-    title: 'Economic Calendar',
-    description:
-      'ForexFactory economic releases with impact filters (High/Medium/Low), forecast vs actual data, and automatic timezone conversion so you never miss a catalyst.',
-    badge: 'ForexFactory',
-  },
-  {
-    icon: Lightbulb,
-    gradient: 'from-pink-500 to-rose-600',
-    glow: 'shadow-pink-500/25',
+    icon: BookOpen,
     title: 'Chart Ideas Journal',
     description:
-      'Screenshot uploads to Supabase Storage, mood tagging (confident, uncertain, regret), hypothetical outcome tracking, and setup tags — your visual edge library.',
-    badge: 'Setup Tracking',
+      'Annotated screenshot uploads, mood tags, setup tracking, and hypothesis logging. Build the visual library that shows you exactly which setups actually work for you.',
+  },
+];
+
+const journalStats = [
+  {
+    figure: '68%',
+    context: 'of active journalers achieve positive profit factor within 90 days',
+    source: 'TraderSync internal cohort study, 5,000 accounts',
   },
   {
-    icon: Clock,
-    gradient: 'from-violet-500 to-purple-700',
-    glow: 'shadow-violet-500/25',
-    title: 'Pre-Market Routine Builder',
-    description:
-      'Structured daily ritual with phase countdown timers, regime rules, and journal prompts. Build the disciplined habits that separate consistent traders from gamblers.',
-    badge: 'Discipline',
+    figure: '3×',
+    context: 'higher expectancy for traders who review sessions daily vs. weekly',
+    source: 'ForTraders.com analysis, 2023',
+  },
+  {
+    figure: '80%',
+    context: 'of losing traders cite "no review process" as a primary contributing factor',
+    source: 'Bookmap trader survey, 2023',
+  },
+  {
+    figure: '90%',
+    context: 'of retail options traders lose money — most never identify the pattern',
+    source: 'CBOE, SEC retail investor studies',
   },
 ];
 
-const stats = [
-  { value: '100×', label: 'Options multiplier auto-applied' },
-  { value: '<30ms', label: 'P&L computation speed' },
-  { value: 'RLS', label: 'Row-level security on all data' },
-  { value: 'DeepSeek', label: 'AI model powering coaching' },
+const consequences = [
+  {
+    icon: AlertTriangle,
+    title: 'The Memory Trap',
+    body: 'Human memory is systematically biased. You recall big wins vividly and compress repeated, costly mistakes into a blur. Without a written record, you are navigating by a distorted map.',
+  },
+  {
+    icon: TrendingDown,
+    title: 'Behavioral Loops Stay Invisible',
+    body: 'Revenge trading, overtrading after a win, widening stops — these patterns repeat because there is no mirror. A journal converts invisible behavior into measurable data.',
+  },
+  {
+    icon: Shield,
+    title: 'No Quantified Edge',
+    body: 'Without tagging setups, time-of-day, and market conditions, you cannot know which strategies actually carry positive expectancy for you. You are trading a guess, not a system.',
+  },
 ];
 
-const instruments = ['Options', 'Futures', 'Stocks', 'Crypto', 'Spreads', 'Multi-leg'];
+const expertQuotes = [
+  {
+    quote:
+      '"Successful traders know that a consistent and systematic review of their daily trading activities is the direct path to growing and improving."',
+    name: 'Van K. Tharp, Ph.D.',
+    title: 'Author, Trade Your Way to Financial Freedom',
+  },
+  {
+    quote:
+      '"A trading journal keeps you constructive, keeps you learning, and keeps you working on the things that are most important. It is not a tool for rehashing the day — it is a tool for self-development."',
+    name: 'Dr. Brett Steenbarger',
+    title: 'Clinical Psychologist, Forbes trading columnist',
+  },
+  {
+    quote:
+      '"Trading without a diary is like shaving without a mirror."',
+    name: 'Industry axiom',
+    title: 'Repeated across Trademetria, SMC Trade Online, ForTraders',
+  },
+];
 
-/* ─── Skeleton Components ─────────────────────────────────────────── */
-function SkeletonLine({ w = 'w-full', h = 'h-2.5' }: { w?: string; h?: string }) {
-  return <div className={`${w} ${h} bg-white/8 rounded-full animate-pulse`} />;
-}
+/* ─────────────────────────── Skeleton bits ─────────────────────────── */
 
-function KpiCard({ label, value, up }: { label: string; value: string; up: boolean }) {
+function PulseBar({ w, opacity = 'opacity-100' }: { w: string; opacity?: string }) {
   return (
-    <div className="bg-white/4 border border-white/8 rounded-2xl p-3.5 flex flex-col gap-2">
-      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{label}</p>
-      <p className={`text-xl font-black ${up ? 'text-emerald-400' : 'text-slate-200'}`}>{value}</p>
-      <div className="flex items-center gap-1">
-        <div className={`w-2 h-2 rounded-full ${up ? 'bg-emerald-500' : 'bg-slate-600'}`} />
-        <SkeletonLine w="w-16" h="h-2" />
-      </div>
-    </div>
+    <div
+      className={`${w} h-[7px] rounded-full bg-zinc-700/60 animate-pulse ${opacity}`}
+    />
   );
 }
 
-function TradeRow({ win, ghost = false }: { win: boolean; ghost?: boolean }) {
+function TradeRow({ green }: { green: boolean }) {
   return (
-    <div className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border transition-all ${ghost ? 'opacity-30' : ''} border-white/5 bg-white/2`}>
-      <div className={`w-2 h-2 rounded-full flex-shrink-0 ${win ? 'bg-emerald-400' : 'bg-red-400'}`} />
-      <SkeletonLine w="w-12" h="h-2.5" />
-      <SkeletonLine w="w-20" h="h-2.5" />
+    <div className="flex items-center gap-3 py-2 border-b border-zinc-800/60 last:border-0">
+      <div
+        className={`w-1.5 h-4 rounded-full flex-shrink-0 ${green ? 'bg-emerald-500' : 'bg-red-500'}`}
+      />
+      <PulseBar w="w-10" />
+      <PulseBar w="w-16" />
       <div className="flex-1" />
-      <span className={`text-xs font-black ${win ? 'text-emerald-400' : 'text-red-400'}`}>
-        {win ? '+$247' : '-$89'}
+      <span
+        className={`text-xs font-mono font-bold tabular-nums ${green ? 'text-emerald-400' : 'text-red-400'}`}
+      >
+        {green ? '+$312' : '−$84'}
       </span>
     </div>
   );
 }
 
-/* ─── Main Page ───────────────────────────────────────────────────── */
+/* ─────────────────────────── Main page ─────────────────────────────── */
+
 export default function LandingPage() {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    const handler = () => setScrolled(window.scrollY > 8);
+    window.addEventListener('scroll', handler, { passive: true });
+    return () => window.removeEventListener('scroll', handler);
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#06060c] text-white overflow-x-hidden">
-
-      {/* ── Global CSS Animations ─────────────────────────────────── */}
+    <div className="min-h-screen bg-[#09090b] text-white antialiased">
       <style>{`
-        @keyframes float1 {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          33%       { transform: translate(30px, -40px) scale(1.05); }
-          66%       { transform: translate(-20px, 20px) scale(0.97); }
-        }
-        @keyframes float2 {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          40%       { transform: translate(-35px, 25px) scale(1.08); }
-          70%       { transform: translate(15px, -30px) scale(0.95); }
-        }
-        @keyframes float3 {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          50%       { transform: translate(20px, 35px) scale(1.04); }
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+        * { font-family: 'Inter', system-ui, sans-serif; }
+
+        h1, h2, h3 { text-wrap: balance; }
+        p { text-wrap: pretty; }
+
         @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(24px); }
+          from { opacity: 0; transform: translateY(20px); }
           to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes drawEquity {
+          from { stroke-dashoffset: 700; }
+          to   { stroke-dashoffset: 0; }
+        }
+        @keyframes pulse-slow {
+          0%, 100% { opacity: .12; }
+          50%       { opacity: .18; }
         }
         @keyframes ticker {
           0%   { transform: translateX(0); }
           100% { transform: translateX(-50%); }
         }
-        @keyframes drawLine {
-          from { stroke-dashoffset: 600; }
-          to   { stroke-dashoffset: 0; }
+
+        .fade-up { animation: fadeUp .65s ease both; }
+        .du-100 { animation-delay: .10s; }
+        .du-200 { animation-delay: .20s; }
+        .du-300 { animation-delay: .35s; }
+        .du-450 { animation-delay: .45s; }
+
+        .equity-path {
+          stroke-dasharray: 700;
+          animation: drawEquity 2.4s .6s ease forwards;
         }
-        .fade-up { animation: fadeUp 0.7s ease forwards; }
-        .fade-up-1 { animation: fadeUp 0.7s 0.1s ease both; }
-        .fade-up-2 { animation: fadeUp 0.7s 0.2s ease both; }
-        .fade-up-3 { animation: fadeUp 0.7s 0.35s ease both; }
-        .fade-up-4 { animation: fadeUp 0.7s 0.5s ease both; }
-        .orb1 { animation: float1 12s ease-in-out infinite; }
-        .orb2 { animation: float2 15s ease-in-out infinite; }
-        .orb3 { animation: float3 10s ease-in-out infinite; }
-        .ticker-inner { animation: ticker 28s linear infinite; }
-        .equity-line { stroke-dasharray: 600; animation: drawLine 2.5s 0.5s ease forwards; }
+        .ticker-inner { animation: ticker 30s linear infinite; }
+
+        .section-divider {
+          border: none;
+          height: 1px;
+          background: linear-gradient(to right, transparent, #27272a 50%, transparent);
+        }
+
+        /* Subtle hero glow — single colour, barely visible */
+        .hero-glow {
+          background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(79,70,229,.12) 0%, transparent 70%);
+          animation: pulse-slow 8s ease-in-out infinite;
+        }
+
+        /* Stat card accent bar */
+        .stat-bar {
+          background: linear-gradient(90deg, #4f46e5, #6366f1);
+        }
       `}</style>
 
-      {/* ── Sticky Navbar ─────────────────────────────────────────── */}
-      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-[#06060c]/90 backdrop-blur-xl border-b border-white/8 shadow-2xl' : ''}`}>
-        <div className="max-w-7xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-8 h-8 rounded-xl overflow-hidden border border-white/10 shadow-md flex-shrink-0">
+      {/* ── Navbar ─────────────────────────────────────────────────── */}
+      <header
+        className={`fixed top-0 inset-x-0 z-50 transition-all duration-200 ${
+          scrolled
+            ? 'bg-[#09090b]/95 backdrop-blur-md border-b border-zinc-800/80'
+            : ''
+        }`}
+      >
+        <div className="max-w-6xl mx-auto px-6 h-[60px] flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <div className="w-7 h-7 rounded-lg overflow-hidden border border-zinc-700/60 flex-shrink-0">
               <img src="/logo.png" alt="TradeVault" className="w-full h-full object-cover" />
             </div>
-            <span className="text-base font-black text-white font-mono tracking-tight">TradeVault</span>
+            <span className="text-[15px] font-bold text-white font-mono tracking-tight">TradeVault</span>
           </Link>
 
-          {/* CTAs */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <Link
               href="/login"
-              className="hidden sm:flex items-center px-4 py-2 text-sm font-bold text-slate-300 hover:text-white transition-colors rounded-xl hover:bg-white/5"
+              className="px-4 py-2 text-sm font-semibold text-zinc-400 hover:text-white transition-colors"
             >
-              Sign In
+              Sign in
             </Link>
             <Link
               href="/signup"
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-black rounded-xl transition-all shadow-lg shadow-indigo-600/25 hover:shadow-indigo-500/40 hover:scale-105 active:scale-95"
+              className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold rounded-lg transition-colors"
             >
-              Get Early Access
-              <ChevronRight className="w-4 h-4" />
+              Get access
+              <ChevronRight className="w-3.5 h-3.5" />
             </Link>
           </div>
         </div>
       </header>
 
-      {/* ── Hero Section ──────────────────────────────────────────── */}
-      <section className="relative pt-32 pb-20 px-5 sm:px-8 overflow-hidden">
-        {/* Gradient Orbs */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="orb1 absolute top-20 left-[15%] w-[500px] h-[500px] rounded-full bg-indigo-600/20 blur-[100px]" />
-          <div className="orb2 absolute top-40 right-[10%] w-[400px] h-[400px] rounded-full bg-purple-600/15 blur-[120px]" />
-          <div className="orb3 absolute bottom-0 left-[40%] w-[350px] h-[350px] rounded-full bg-cyan-500/10 blur-[90px]" />
-        </div>
+      {/* ── Hero ───────────────────────────────────────────────────── */}
+      <section className="relative pt-32 pb-24 px-6 overflow-hidden">
+        {/* single muted glow */}
+        <div className="hero-glow absolute inset-0 pointer-events-none" />
 
-        <div className="max-w-7xl mx-auto relative z-10">
-          <div className="max-w-3xl mx-auto text-center mb-16">
-            {/* Badge */}
-            <div className="fade-up-1 inline-flex items-center gap-2 px-3.5 py-1.5 bg-indigo-500/15 border border-indigo-500/30 rounded-full text-indigo-300 text-xs font-black uppercase tracking-widest mb-6">
-              <Zap className="w-3 h-3 text-indigo-400" />
-              AI-Powered Options Journal — Beta
-            </div>
-
+        <div className="max-w-6xl mx-auto relative z-10">
+          <div className="max-w-2xl mb-14">
             {/* Headline */}
-            <h1 className="fade-up-2 text-5xl sm:text-6xl lg:text-7xl font-black text-white leading-[1.05] tracking-tight mb-6">
-              Master Your Edge.{' '}
-              <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
-                Vault Your Trades.
-              </span>
+            <h1 className="fade-up du-100 text-5xl sm:text-6xl font-extrabold leading-[1.08] tracking-tight text-white mb-5">
+              Stop trading blind.
+              <br />
+              <span className="text-zinc-400 font-medium">Build your edge with data.</span>
             </h1>
 
-            {/* Sub */}
-            <p className="fade-up-3 text-lg sm:text-xl text-slate-400 leading-relaxed max-w-2xl mx-auto mb-10">
-              The institutional-grade trading journal built for serious options traders. AI coaching, live market data, performance analytics, and behavioral edge tracking — all in one platform.
+            <p className="fade-up du-200 text-base sm:text-lg text-zinc-400 leading-relaxed mb-8 max-w-xl">
+              TradeVault is an AI-powered trading journal designed for options traders who are serious about improving. Log trades, surface behavioral patterns, and get personalized coaching — all from your own data.
             </p>
 
-            {/* CTAs */}
-            <div className="fade-up-4 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <div className="fade-up du-300 flex flex-wrap items-center gap-3">
               <Link
                 href="/signup"
-                className="group flex items-center gap-2 px-7 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-2xl transition-all shadow-xl shadow-indigo-600/30 hover:shadow-indigo-500/50 hover:scale-105 active:scale-95 text-sm"
+                className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold rounded-lg transition-colors"
               >
-                Start Free — No Credit Card
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                Start for free
+                <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
                 href="/login"
-                className="flex items-center gap-2 px-7 py-3.5 bg-white/5 hover:bg-white/10 text-white font-black rounded-2xl border border-white/10 hover:border-white/20 transition-all text-sm"
+                className="px-5 py-2.5 border border-zinc-700 hover:border-zinc-500 text-zinc-300 text-sm font-semibold rounded-lg transition-colors"
               >
-                Sign In
+                Sign in
               </Link>
             </div>
 
-            {/* Trust pills */}
-            <div className="fade-up-4 flex flex-wrap items-center justify-center gap-3 mt-8">
-              {['Commission-aware P&L', 'Row-level security', 'Real-time market data', 'DeepSeek AI'].map((t) => (
-                <div key={t} className="flex items-center gap-1.5 text-xs text-slate-400 font-semibold">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+            <div className="fade-up du-450 flex flex-wrap items-center gap-4 mt-6">
+              {['Commission-aware P&L', 'Row-level data isolation', 'DeepSeek AI coaching'].map((t) => (
+                <span key={t} className="flex items-center gap-1.5 text-xs text-zinc-500 font-medium">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-zinc-600" />
                   {t}
-                </div>
+                </span>
               ))}
             </div>
           </div>
 
-          {/* ── App Preview Card ────────────────────────────────── */}
-          <div className="fade-up-4 relative max-w-5xl mx-auto">
-            {/* Glow behind card */}
-            <div className="absolute -inset-4 bg-gradient-to-b from-indigo-600/20 via-purple-600/10 to-transparent rounded-3xl blur-2xl" />
-
-            <div className="relative bg-[#0e0e18]/90 border border-white/10 rounded-3xl overflow-hidden shadow-2xl backdrop-blur-sm">
-              {/* Fake window bar */}
-              <div className="flex items-center gap-2 px-5 py-3 border-b border-white/8 bg-white/2">
-                <div className="w-3 h-3 rounded-full bg-red-500/70" />
-                <div className="w-3 h-3 rounded-full bg-amber-500/70" />
-                <div className="w-3 h-3 rounded-full bg-emerald-500/70" />
-                <div className="flex-1 mx-4 h-5 bg-white/5 rounded-md px-3 flex items-center">
-                  <span className="text-[10px] text-slate-500 font-mono">app.tradevault.io/dashboard</span>
+          {/* ── App Preview Card ─────────────────────────────────── */}
+          <div className="fade-up du-450 relative">
+            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl">
+              {/* Titlebar */}
+              <div className="flex items-center gap-2 px-4 py-3 border-b border-zinc-800 bg-zinc-900/80">
+                <div className="flex gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-zinc-700" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-zinc-700" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-zinc-700" />
+                </div>
+                <div className="flex-1 mx-4 h-5 bg-zinc-800 rounded px-3 flex items-center">
+                  <span className="text-[10px] text-zinc-500 font-mono">app.tradevault.io/dashboard</span>
                 </div>
               </div>
 
-              <div className="p-4 sm:p-6 space-y-4">
-                {/* Market ticker bar skeleton */}
-                <div className="flex items-center gap-3 px-4 py-2.5 bg-white/3 border border-white/8 rounded-xl overflow-hidden">
-                  <div className="flex items-center gap-1.5 text-[10px] font-black text-emerald-400 flex-shrink-0">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    MARKET
-                  </div>
-                  <div className="overflow-hidden flex-1">
-                    <div className="ticker-inner flex gap-8 w-max">
-                      {[['SPY', '+0.61%', true], ['QQQ', '+1.17%', true], ['VIX', '-1.65%', false], ['IWM', '+1.11%', true], ['NVDA', '+2.34%', true], ['AAPL', '-0.42%', false], ['SPY', '+0.61%', true], ['QQQ', '+1.17%', true], ['VIX', '-1.65%', false]].map(([sym, chg, up], i) => (
-                        <div key={i} className="flex items-center gap-2 flex-shrink-0">
-                          <span className="text-[10px] font-black text-slate-300">{sym}</span>
-                          <span className={`text-[10px] font-bold ${up ? 'text-emerald-400' : 'text-red-400'}`}>{chg as string}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* KPI cards */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <KpiCard label="Balance" value="$24,830" up={true} />
-                  <KpiCard label="Net P&L" value="+$3,240" up={true} />
-                  <KpiCard label="Win Rate" value="68.4%" up={true} />
-                  <KpiCard label="Today" value="+$480" up={true} />
-                </div>
-
-                {/* Equity chart + trade list */}
-                <div className="grid sm:grid-cols-5 gap-3">
-                  {/* Chart */}
-                  <div className="sm:col-span-3 bg-white/3 border border-white/8 rounded-2xl p-4">
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Equity Curve</p>
-                        <p className="text-lg font-black text-white mt-0.5">$24,830</p>
+              <div className="grid sm:grid-cols-5 gap-0">
+                {/* Left panel */}
+                <div className="sm:col-span-3 p-5 border-r border-zinc-800 space-y-4">
+                  {/* Ticker */}
+                  <div className="flex items-center gap-3 px-3 py-2 bg-zinc-800/50 border border-zinc-700/50 rounded-lg overflow-hidden">
+                    <span className="flex items-center gap-1.5 text-[10px] font-bold text-zinc-400 flex-shrink-0 uppercase tracking-wider">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      Live
+                    </span>
+                    <div className="overflow-hidden flex-1">
+                      <div className="ticker-inner flex gap-6 w-max">
+                        {[['SPY','+0.61%',true],['QQQ','+1.17%',true],['VIX','−1.65%',false],['IWM','+1.11%',true],['NVDA','+2.34%',true],['AAPL','−0.42%',false],['SPY','+ 0.61%',true],['QQQ','+1.17%',true],['VIX','−1.65%',false]].map(([s,c,up],i)=>(
+                          <span key={i} className="flex items-center gap-1.5 text-[10px] flex-shrink-0">
+                            <span className="font-bold text-zinc-300">{s}</span>
+                            <span className={`font-semibold ${up ? 'text-emerald-400' : 'text-red-400'}`}>{c as string}</span>
+                          </span>
+                        ))}
                       </div>
-                      <span className="text-xs font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">+15.2%</span>
                     </div>
-                    <svg viewBox="0 0 300 80" className="w-full h-16" preserveAspectRatio="none">
+                  </div>
+
+                  {/* KPIs */}
+                  <div className="grid grid-cols-4 gap-2.5">
+                    {[
+                      { label: 'Balance', value: '$24,830', sub: '+15.2%', green: true },
+                      { label: 'Net P&L', value: '+$3,240', sub: '42 trades', green: true },
+                      { label: 'Win Rate', value: '68.4%', sub: '27W · 12L', green: true },
+                      { label: 'Today', value: '+$480', sub: '3 trades', green: true },
+                    ].map(({ label, value, sub, green }) => (
+                      <div key={label} className="bg-zinc-800/40 border border-zinc-700/50 rounded-xl p-3">
+                        <p className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 mb-1.5">{label}</p>
+                        <p className={`text-sm font-black font-mono tabular-nums ${green ? 'text-white' : 'text-zinc-200'}`}>{value}</p>
+                        <p className="text-[10px] text-zinc-500 mt-1">{sub}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Equity chart */}
+                  <div className="bg-zinc-800/40 border border-zinc-700/50 rounded-xl p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-xs font-semibold text-zinc-300">Equity Curve</p>
+                      <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">+15.2% MTD</span>
+                    </div>
+                    <svg viewBox="0 0 380 70" className="w-full h-14" preserveAspectRatio="none">
                       <defs>
-                        <linearGradient id="eqGrad" x1="0" x2="0" y1="0" y2="1">
-                          <stop offset="0%" stopColor="#6366f1" stopOpacity="0.4" />
-                          <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
+                        <linearGradient id="equGrad" x1="0" x2="0" y1="0" y2="1">
+                          <stop offset="0%" stopColor="#4f46e5" stopOpacity=".3" />
+                          <stop offset="100%" stopColor="#4f46e5" stopOpacity="0" />
                         </linearGradient>
                       </defs>
                       <path
-                        d="M0,65 C20,62 40,58 60,52 C80,46 95,50 115,42 C135,34 150,38 170,28 C190,18 205,22 225,15 C245,8 265,12 300,5"
+                        d="M0,62 C25,59 50,54 75,48 C100,42 115,47 140,38 C165,29 180,34 210,24 C240,14 255,20 285,12 C315,4 345,8 380,3"
                         fill="none"
                         stroke="#6366f1"
-                        strokeWidth="2"
+                        strokeWidth="1.5"
                         strokeLinecap="round"
-                        className="equity-line"
+                        className="equity-path"
                       />
                       <path
-                        d="M0,65 C20,62 40,58 60,52 C80,46 95,50 115,42 C135,34 150,38 170,28 C190,18 205,22 225,15 C245,8 265,12 300,5 L300,80 L0,80 Z"
-                        fill="url(#eqGrad)"
-                        opacity="0.6"
+                        d="M0,62 C25,59 50,54 75,48 C100,42 115,47 140,38 C165,29 180,34 210,24 C240,14 255,20 285,12 C315,4 345,8 380,3 L380,70 L0,70 Z"
+                        fill="url(#equGrad)"
+                        opacity=".7"
                       />
                     </svg>
                   </div>
+                </div>
 
-                  {/* Trade list */}
-                  <div className="sm:col-span-2 bg-white/3 border border-white/8 rounded-2xl p-3 space-y-2">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 px-1 mb-3">Recent Trades</p>
-                    <TradeRow win={true} />
-                    <TradeRow win={true} />
-                    <TradeRow win={false} />
-                    <TradeRow win={true} />
-                    <TradeRow win={true} ghost={true} />
+                {/* Right panel — trade log */}
+                <div className="sm:col-span-2 p-5">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-3">Recent Trades</p>
+                  <div className="space-y-0">
+                    <TradeRow green={true} />
+                    <TradeRow green={true} />
+                    <TradeRow green={false} />
+                    <TradeRow green={true} />
+                    <TradeRow green={true} />
+                  </div>
+
+                  <div className="mt-4 pt-3 border-t border-zinc-800">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-2">AI Coach Score</p>
+                    {[['Discipline', 81], ['Risk Mgmt', 68], ['Execution', 77]].map(([label, score]) => (
+                      <div key={label as string} className="flex items-center gap-2 mb-2">
+                        <span className="text-[10px] text-zinc-400 w-16 flex-shrink-0">{label}</span>
+                        <div className="flex-1 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-indigo-500 animate-pulse"
+                            style={{ width: `${score}%` }}
+                          />
+                        </div>
+                        <span className="text-[10px] font-mono font-bold text-zinc-300 w-6 text-right">{score}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -350,210 +395,230 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Instruments Bar ───────────────────────────────────────── */}
-      <section className="border-y border-white/8 bg-white/2 py-5 px-5 sm:px-8 overflow-hidden">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-center gap-4 sm:gap-8">
-          <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 mr-4">Built for</span>
-          {instruments.map((inst) => (
-            <div key={inst} className="flex items-center gap-2 text-sm font-black text-slate-300">
-              <CheckCircle2 className="w-4 h-4 text-indigo-400" />
-              {inst}
-            </div>
-          ))}
-        </div>
-      </section>
+      <hr className="section-divider" />
 
-      {/* ── Stats Row ─────────────────────────────────────────────── */}
-      <section className="py-16 px-5 sm:px-8">
-        <div className="max-w-5xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-6">
-          {stats.map(({ value, label }) => (
-            <div key={label} className="text-center">
-              <p className="text-3xl sm:text-4xl font-black text-white mb-1">{value}</p>
-              <p className="text-xs text-slate-500 font-semibold leading-snug">{label}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── Features Grid ─────────────────────────────────────────── */}
-      <section className="py-20 px-5 sm:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-14">
-            <h2 className="text-3xl sm:text-4xl font-black text-white mb-4">
-              Everything serious traders need.{' '}
-              <span className="text-slate-400">Nothing they don't.</span>
+      {/* ── Why journaling matters — the research ─────────────────── */}
+      <section className="py-24 px-6">
+        <div className="max-w-6xl mx-auto">
+          {/* Section label */}
+          <p className="text-xs font-bold uppercase tracking-widest text-indigo-500 mb-4">The Research</p>
+          <div className="grid lg:grid-cols-2 gap-12 items-start mb-16">
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-white leading-tight">
+              Most traders fail for a reason that has nothing to do with strategy.
             </h2>
-            <p className="text-slate-500 text-base max-w-xl mx-auto">
-              Designed with an experienced options trader and a team of backend & frontend engineers to give you institutional-grade tooling in a clean, fast interface.
+            <p className="text-zinc-400 text-base leading-relaxed pt-1">
+              The SEC, CBOE, and independent researchers consistently find that 70–90% of retail options traders lose money. The primary culprit is not market knowledge — it is the absence of a disciplined feedback loop. Without reviewing your own trades in detail, behavioral patterns compound silently until the account is gone.
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {features.map(({ icon: Icon, gradient, glow, title, description, badge }) => (
-              <div
-                key={title}
-                className={`group relative bg-[#0e0e18] border border-white/8 rounded-2xl p-6 hover:border-white/15 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${glow}`}
-              >
-                {/* Icon */}
-                <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center mb-4 shadow-lg`}>
-                  <Icon className="w-5 h-5 text-white" />
-                </div>
-
-                {/* Badge */}
-                <span className="inline-block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">{badge}</span>
-
-                <h3 className="text-base font-black text-white mb-2">{title}</h3>
-                <p className="text-sm text-slate-400 leading-relaxed">{description}</p>
-
-                {/* Hover glow effect */}
-                <div className={`absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-br ${gradient} blur-2xl -z-10 scale-110`} style={{ opacity: 0 }} />
+          {/* Statistics grid */}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {journalStats.map(({ figure, context, source }) => (
+              <div key={figure} className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 flex flex-col">
+                <div className="stat-bar w-8 h-0.5 rounded-full mb-4" />
+                <p className="text-4xl font-black text-white mb-2 tabular-nums font-mono">{figure}</p>
+                <p className="text-sm text-zinc-300 leading-snug flex-1">{context}</p>
+                <p className="text-[10px] text-zinc-600 mt-3 font-medium leading-tight">{source}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── AI Coach Preview ──────────────────────────────────────── */}
-      <section className="py-20 px-5 sm:px-8 relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-indigo-600/8 rounded-full blur-3xl" />
-        </div>
+      <hr className="section-divider" />
 
-        <div className="max-w-7xl mx-auto relative z-10">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Copy */}
-            <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-500/15 border border-indigo-500/30 rounded-full text-indigo-300 text-xs font-black uppercase tracking-widest mb-6">
-                <Sparkles className="w-3 h-3" />
-                AI Trading Mentor
+      {/* ── What happens without a journal ─────────────────────────── */}
+      <section className="py-24 px-6">
+        <div className="max-w-6xl mx-auto">
+          <p className="text-xs font-bold uppercase tracking-widest text-indigo-500 mb-4">Without a Journal</p>
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-3 max-w-xl">
+            The patterns that cost you the most stay invisible.
+          </h2>
+          <p className="text-zinc-400 text-base mb-12 max-w-xl leading-relaxed">
+            Research from behavioral finance and trading psychology identifies three mechanisms that silently erode profitability when traders operate without a structured review process.
+          </p>
+
+          <div className="grid sm:grid-cols-3 gap-6 mb-16">
+            {consequences.map(({ icon: Icon, title, body }) => (
+              <div key={title} className="border-l-2 border-zinc-800 pl-5">
+                <div className="w-8 h-8 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center mb-4">
+                  <Icon className="w-4 h-4 text-zinc-400" />
+                </div>
+                <h3 className="text-base font-bold text-white mb-2">{title}</h3>
+                <p className="text-sm text-zinc-400 leading-relaxed">{body}</p>
               </div>
-              <h2 className="text-3xl sm:text-4xl font-black text-white mb-5 leading-tight">
-                Your personal trading coach,{' '}
-                <span className="text-indigo-400">available 24/7.</span>
-              </h2>
-              <p className="text-slate-400 text-base leading-relaxed mb-8">
-                The AI Coach reads your actual trade history — not generic advice. It scores your discipline, risk management, execution quality, and emotional control. Then gives you a concrete action plan backed by your own statistics.
-              </p>
-              <ul className="space-y-3">
-                {[
-                  'Win rate & behavioral leak analysis',
-                  'Session & day-of-week performance patterns',
-                  'Concrete action plan with measurable targets',
-                  'General options mechanics Q&A (IV crush, spreads, Greeks)',
-                ].map((item) => (
-                  <li key={item} className="flex items-start gap-2.5 text-sm text-slate-300">
-                    <CheckCircle2 className="w-4 h-4 text-indigo-400 flex-shrink-0 mt-0.5" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
+            ))}
+          </div>
 
-            {/* Coach UI Skeleton */}
-            <div className="bg-[#0e0e18] border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
-              {/* Header */}
-              <div className="flex items-center gap-3 px-5 py-4 border-b border-white/8 bg-white/2">
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-                  <Sparkles className="w-4 h-4 text-white" />
+          {/* Expert quotes */}
+          <div className="grid sm:grid-cols-3 gap-4">
+            {expertQuotes.map(({ quote, name, title }) => (
+              <blockquote
+                key={name}
+                className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-5 flex flex-col"
+              >
+                <p className="text-sm text-zinc-300 leading-relaxed flex-1 italic mb-4">{quote}</p>
+                <footer>
+                  <p className="text-xs font-bold text-white">{name}</p>
+                  <p className="text-[10px] text-zinc-500 mt-0.5">{title}</p>
+                </footer>
+              </blockquote>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <hr className="section-divider" />
+
+      {/* ── What TradeVault gives you ───────────────────────────────── */}
+      <section className="py-24 px-6">
+        <div className="max-w-6xl mx-auto">
+          <p className="text-xs font-bold uppercase tracking-widest text-indigo-500 mb-4">The Platform</p>
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-3 max-w-xl">
+            Everything you need to turn trading activity into measurable improvement.
+          </h2>
+          <p className="text-zinc-400 text-base mb-12 max-w-xl leading-relaxed">
+            Built by options traders, not generalists. Every feature exists because a specific class of mistake kept showing up in trade logs.
+          </p>
+
+          <div className="grid sm:grid-cols-2 gap-6">
+            {features.map(({ icon: Icon, title, description }) => (
+              <div key={title} className="flex gap-4 p-5 bg-zinc-900 border border-zinc-800 rounded-xl hover:border-zinc-700 transition-colors">
+                <div className="w-9 h-9 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Icon className="w-4 h-4 text-indigo-400" />
                 </div>
                 <div>
-                  <p className="text-sm font-black text-white">AI Trading Coach</p>
-                  <p className="text-[10px] text-slate-500">Powered by DeepSeek · Educational only</p>
-                </div>
-                <div className="ml-auto flex items-center gap-1.5 text-[10px] text-emerald-400 font-bold">
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  Active
+                  <h3 className="text-sm font-bold text-white mb-1.5">{title}</h3>
+                  <p className="text-sm text-zinc-400 leading-relaxed">{description}</p>
                 </div>
               </div>
+            ))}
+          </div>
 
-              <div className="p-5 space-y-4">
-                {/* Score cards */}
-                <div className="grid grid-cols-2 gap-2.5">
-                  {[
-                    { label: 'Overall', score: 74, color: 'text-indigo-400' },
-                    { label: 'Discipline', score: 81, color: 'text-emerald-400' },
-                    { label: 'Risk Mgmt', score: 68, color: 'text-amber-400' },
-                    { label: 'Execution', score: 77, color: 'text-cyan-400' },
-                  ].map(({ label, score, color }) => (
-                    <div key={label} className="bg-white/4 border border-white/8 rounded-xl p-3">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">{label}</p>
-                      <p className={`text-xl font-black ${color}`}>{score}</p>
-                      <div className="mt-1.5 h-1 bg-white/10 rounded-full overflow-hidden">
-                        <div className={`h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 animate-pulse`} style={{ width: `${score}%` }} />
-                      </div>
-                    </div>
-                  ))}
+          {/* Additional tools list */}
+          <div className="mt-8 p-5 bg-zinc-900 border border-zinc-800 rounded-xl">
+            <p className="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-4">Also included</p>
+            <div className="grid sm:grid-cols-3 gap-3">
+              {[
+                'Live economic calendar (ForexFactory)',
+                'Pre-market routine builder with timers',
+                'Commission-aware P&L calculation',
+                'Multi-account support (paper + live)',
+                'CSV export of full trade history',
+                'Options 100× multiplier auto-applied',
+                'Implied volatility & Greeks context',
+                'Session & day-of-week heatmaps',
+                'Security logs & row-level isolation',
+              ].map((item) => (
+                <div key={item} className="flex items-center gap-2 text-sm text-zinc-400">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-zinc-600 flex-shrink-0" />
+                  {item}
                 </div>
-
-                {/* Chat bubble */}
-                <div className="bg-indigo-600/15 border border-indigo-500/20 rounded-2xl rounded-tl-sm p-4">
-                  <p className="text-sm text-slate-300 leading-relaxed">
-                    <span className="font-black text-indigo-300">Coach analysis: </span>
-                    Your Tuesday sessions show 82% win rate vs 54% on Fridays. Consider reducing Friday position sizes until you identify the behavioral driver. Your average hold time on winners is 2.3× longer than on losers — this is a strength to systematize.
-                  </p>
-                </div>
-
-                {/* Legal strip */}
-                <div className="flex items-center gap-2 text-[10px] text-slate-500 font-medium border border-white/5 rounded-xl px-3 py-2">
-                  <Shield className="w-3 h-3 flex-shrink-0" />
-                  Educational journaling tool only. Not financial advice or trade signals.
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── CTA Band ──────────────────────────────────────────────── */}
-      <section className="py-24 px-5 sm:px-8 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/20 via-purple-600/15 to-indigo-600/20 pointer-events-none" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-indigo-600/10 via-transparent to-transparent pointer-events-none" />
+      <hr className="section-divider" />
 
-        <div className="max-w-3xl mx-auto text-center relative z-10">
-          <h2 className="text-4xl sm:text-5xl font-black text-white mb-5 leading-tight">
-            Start vaulting your trades today.
+      {/* ── How journals improve performance ──────────────────────── */}
+      <section className="py-24 px-6">
+        <div className="max-w-6xl mx-auto">
+          <p className="text-xs font-bold uppercase tracking-widest text-indigo-500 mb-4">The Method</p>
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-12 max-w-xl">
+            A review process that professionals use. Now accessible to any trader.
           </h2>
-          <p className="text-slate-400 text-lg mb-10 leading-relaxed">
-            Join traders who are already building their edge with AI coaching, real-time market data, and a journal that actually helps them improve.
+
+          <div className="grid sm:grid-cols-3 gap-8">
+            {[
+              {
+                step: '01',
+                title: 'Log every trade with context',
+                body: 'Entry, exit, contract details, and the rationale. Tags for setup type, emotional state, and market regime. Options-specific fields: IV at entry, adjustment logs, Greeks.',
+              },
+              {
+                step: '02',
+                title: 'Surface patterns automatically',
+                body: 'The analytics engine groups your data by time-of-day, day-of-week, setup tag, account, and symbol. You see which conditions produce positive expectancy — and which do not.',
+              },
+              {
+                step: '03',
+                title: 'Get coaching from your own data',
+                body: 'The AI Coach reads your complete history — not generic advice. It scores discipline, risk management, and execution quality, then gives you a concrete action plan with measurable targets.',
+              },
+            ].map(({ step, title, body }) => (
+              <div key={step} className="relative">
+                <p className="text-5xl font-black text-zinc-800 mb-4 font-mono tabular-nums">{step}</p>
+                <h3 className="text-base font-bold text-white mb-2">{title}</h3>
+                <p className="text-sm text-zinc-400 leading-relaxed">{body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <hr className="section-divider" />
+
+      {/* ── Instruments supported ──────────────────────────────────── */}
+      <section className="py-16 px-6">
+        <div className="max-w-6xl mx-auto flex flex-wrap items-center gap-x-10 gap-y-4">
+          <p className="text-xs font-bold uppercase tracking-widest text-zinc-500">Supports</p>
+          {['Options', 'Futures', 'Stocks', 'Spreads', 'Multi-leg', 'Crypto'].map((inst) => (
+            <span key={inst} className="text-sm font-semibold text-zinc-400">{inst}</span>
+          ))}
+        </div>
+      </section>
+
+      <hr className="section-divider" />
+
+      {/* ── CTA ────────────────────────────────────────────────────── */}
+      <section className="py-28 px-6">
+        <div className="max-w-2xl mx-auto text-center">
+          <h2 className="text-4xl sm:text-5xl font-extrabold text-white mb-5 leading-tight">
+            Build your edge.<br />One trade at a time.
+          </h2>
+          <p className="text-zinc-400 text-base mb-10 leading-relaxed">
+            Join traders who have stopped guessing and started measuring. TradeVault gives you the infrastructure to find your edge and hold onto it.
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
               href="/signup"
-              className="group flex items-center gap-2 px-8 py-4 bg-white text-slate-900 font-black rounded-2xl hover:bg-slate-100 transition-all shadow-2xl hover:scale-105 active:scale-95 text-base"
+              className="flex items-center gap-2 px-6 py-3 bg-white hover:bg-zinc-100 text-zinc-900 font-bold rounded-lg text-sm transition-colors"
             >
-              Create Free Account
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
+              Create free account
+              <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
               href="/login"
-              className="flex items-center gap-2 px-8 py-4 bg-white/8 hover:bg-white/12 text-white font-black rounded-2xl border border-white/15 transition-all text-base"
+              className="px-6 py-3 border border-zinc-700 hover:border-zinc-500 text-zinc-300 font-semibold rounded-lg text-sm transition-colors"
             >
-              Sign In
+              Sign in
             </Link>
           </div>
+          <p className="text-xs text-zinc-600 mt-6">No credit card required. No commitment.</p>
         </div>
       </section>
 
-      {/* ── Footer ────────────────────────────────────────────────── */}
-      <footer className="border-t border-white/8 py-10 px-5 sm:px-8">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-7 h-7 rounded-lg overflow-hidden border border-white/10">
+      {/* ── Footer ─────────────────────────────────────────────────── */}
+      <footer className="border-t border-zinc-800/80 py-10 px-6">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2.5">
+            <div className="w-6 h-6 rounded-md overflow-hidden border border-zinc-700">
               <img src="/logo.png" alt="TradeVault" className="w-full h-full object-cover" />
             </div>
-            <span className="text-sm font-black text-slate-400 font-mono">TradeVault</span>
+            <span className="text-sm font-bold text-zinc-500 font-mono">TradeVault</span>
           </div>
-          <p className="text-xs text-slate-600 text-center">
-            For educational & journaling purposes only. Not financial advice.
+          <p className="text-xs text-zinc-700 text-center leading-snug max-w-sm">
+            For journaling and educational purposes only. Not financial advice. Not a broker-dealer or registered investment advisor.
           </p>
-          <div className="flex items-center gap-5 text-xs text-slate-500 font-semibold">
-            <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
-            <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
+          <div className="flex items-center gap-5 text-xs text-zinc-600 font-medium">
+            <Link href="/terms" className="hover:text-zinc-300 transition-colors">Terms</Link>
+            <Link href="/privacy" className="hover:text-zinc-300 transition-colors">Privacy</Link>
             <span>© 2026 TradeVault</span>
           </div>
         </div>
       </footer>
-
     </div>
   );
 }
