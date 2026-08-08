@@ -109,9 +109,9 @@ export function Sidebar() {
         collapsed ? 'px-3 py-4 flex-col gap-3' : 'px-4 py-4'
       )}>
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 rounded-xl overflow-hidden shadow-md flex-shrink-0 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-center p-0.5">
-            <img src="/logo_light.png" alt="TradeVault Logo" className="w-full h-full object-cover rounded-lg block dark:hidden" />
-            <img src="/logo.png" alt="TradeVault Logo" className="w-full h-full object-cover rounded-lg hidden dark:block" />
+          <div className="w-11 h-11 flex-shrink-0 flex items-center justify-center">
+            <img src="/logo_light.png" alt="TradeVault Logo" className="w-full h-full object-contain block dark:hidden drop-shadow-md" />
+            <img src="/logo.png" alt="TradeVault Logo" className="w-full h-full object-contain hidden dark:block drop-shadow-md" />
           </div>
           {!collapsed && (
             <div className="min-w-0">

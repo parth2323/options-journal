@@ -162,8 +162,8 @@ function SignupContent() {
     <div className="bg-[#0e1017]/90 backdrop-blur-xl border border-slate-800/90 rounded-3xl p-7 sm:p-8 shadow-2xl space-y-5">
       {/* Brand Header */}
       <div className="text-center space-y-2">
-        <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl overflow-hidden border border-slate-800 p-0.5 mb-1 bg-white/5">
-          <img src="/logo.png" alt="TradeVault Logo" className="w-full h-full object-cover rounded-lg" />
+        <div className="inline-flex items-center justify-center w-16 h-16 mb-2 flex-shrink-0">
+          <img src="/logo.png" alt="TradeVault Logo" className="w-full h-full object-contain drop-shadow-lg" />
         </div>
         <h1 className="text-xl font-black tracking-tight text-white font-mono">TradeVault</h1>
         <p className="text-xs text-indigo-400 font-bold uppercase tracking-wider">Options Journal</p>
@@ -352,11 +352,11 @@ function SignupContent() {
             </button>
 
             {/* Brand Header */}
-            <div className="flex items-center gap-2.5">
-              <div className="w-6 h-6 rounded-lg overflow-hidden border border-zinc-700 flex-shrink-0">
-                <img src="/logo.png" alt="TradeVault" className="w-full h-full object-cover" />
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 flex-shrink-0">
+                <img src="/logo.png" alt="TradeVault" className="w-full h-full object-contain drop-shadow-md" />
               </div>
-              <span className="text-xs font-bold text-zinc-300 font-mono tracking-tight">TradeVault — Options Journal</span>
+              <span className="text-sm font-extrabold text-white font-mono tracking-tight">TradeVault — Options Journal</span>
             </div>
 
             {/* Hero Icon & Title */}

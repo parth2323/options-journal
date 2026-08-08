@@ -234,13 +234,13 @@ export default function LandingPage() {
       >
         <div className="max-w-7xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-8 h-8 rounded-xl overflow-hidden border border-zinc-700/70 flex-shrink-0 bg-zinc-900 p-0.5">
-              <img src="/logo.png" alt="TradeVault" className="w-full h-full object-cover rounded-lg" />
+          <Link href="/" className="flex items-center gap-3.5 group">
+            <div className="w-11 h-11 flex-shrink-0">
+              <img src="/logo.png" alt="TradeVault" className="w-full h-full object-contain drop-shadow-md" />
             </div>
             <div className="flex flex-col">
-              <span className="text-base font-extrabold text-white font-mono tracking-tight leading-none">TradeVault</span>
-              <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest leading-tight mt-0.5">Options Journal</span>
+              <span className="text-lg font-black text-white font-mono tracking-tight leading-none">TradeVault</span>
+              <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest leading-tight mt-1">Options Journal</span>
             </div>
           </Link>
 
@@ -372,14 +372,27 @@ export default function LandingPage() {
               </div>
 
               {/* Dynamic Tab Body */}
-              <div className="p-4 sm:p-6 bg-zinc-950/40">
+              <div className="p-4 sm:p-6 bg-zinc-950/60">
                 {activeTab === 'dashboard' && (
                   <div className="space-y-4 animate-in fade-in duration-300">
-                    {/* Market Ticker */}
-                    <div className="flex items-center gap-3 px-3.5 py-2.5 bg-zinc-900/60 border border-zinc-800 rounded-xl overflow-hidden">
+                    {/* Top Bar: Title & Starting Capital */}
+                    <div className="flex items-center justify-between pb-1 border-b border-zinc-800/60">
+                      <div>
+                        <h3 className="text-sm font-black text-white font-mono tracking-tight">TradeVault Dashboard</h3>
+                        <p className="text-[10px] text-zinc-500 font-mono mt-0.5">
+                          Primary Live Account · Starting Capital: <span className="font-bold text-indigo-400">$10,000.00 USD</span>
+                        </p>
+                      </div>
+                      <span className="flex items-center gap-1.5 px-3 py-1 bg-indigo-600/90 text-white text-[11px] font-bold rounded-xl shadow-xs">
+                        + Log Trade
+                      </span>
+                    </div>
+
+                    {/* Live Market Bar */}
+                    <div className="flex items-center gap-3 px-3.5 py-2 bg-zinc-900/90 border border-zinc-800 rounded-xl overflow-hidden">
                       <span className="flex items-center gap-1.5 text-[10px] font-extrabold text-emerald-400 uppercase tracking-widest flex-shrink-0">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                        Live Markets
+                        Market Ticker
                       </span>
                       <div className="overflow-hidden flex-1">
                         <div className="ticker-inner flex gap-8 w-max">
@@ -393,82 +406,181 @@ export default function LandingPage() {
                             ['SPY', '$584.20', '+0.61%', true],
                             ['QQQ', '$489.10', '+1.17%', true],
                           ].map(([s, p, c, up], i) => (
-                            <div key={i} className="flex items-center gap-2 text-xs flex-shrink-0">
-                              <span className="font-extrabold text-zinc-200 font-mono">{s}</span>
-                              <span className="text-zinc-400 font-mono">{p}</span>
-                              <span className={`font-mono font-bold ${up ? 'text-emerald-400' : 'text-red-400'}`}>{c}</span>
+                            <div key={i} className="flex items-center gap-2 text-xs flex-shrink-0 font-mono">
+                              <span className="font-bold text-zinc-200">{s}</span>
+                              <span className="text-zinc-400">{p}</span>
+                              <span className={`font-bold ${up ? 'text-emerald-400' : 'text-red-400'}`}>{c}</span>
                             </div>
                           ))}
                         </div>
                       </div>
                     </div>
 
-                    {/* KPI Metric Cards */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                      {[
-                        { label: 'Balance', value: '$24,830.00', sub: '+15.2% MTD', green: true },
-                        { label: 'Net P&L', value: '+$3,240.50', sub: '42 closed trades', green: true },
-                        { label: 'Win Rate', value: '68.4%', sub: '27W · 12L · 3BE', green: true },
-                        { label: 'Today', value: '+$480.00', sub: '3 trades logged', green: true },
-                      ].map(({ label, value, sub, green }) => (
-                        <div key={label} className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-4">
-                          <p className="text-[10px] font-extrabold uppercase tracking-widest text-zinc-500 mb-1.5">{label}</p>
-                          <p className={`text-xl font-black font-mono tracking-tight ${green ? 'text-white' : 'text-zinc-300'}`}>{value}</p>
-                          <p className="text-[11px] text-zinc-500 mt-1 font-mono">{sub}</p>
+                    {/* KPI Row 1: Primary Metrics */}
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+                      <div className="bg-zinc-900/90 border border-indigo-900/40 rounded-2xl p-3.5 space-y-1">
+                        <span className="text-[10px] font-extrabold uppercase tracking-widest text-zinc-400">Balance</span>
+                        <p className="text-xl font-black font-mono text-white">$13,240.50</p>
+                        <div className="flex items-center gap-1.5 text-[10px] font-mono">
+                          <span className="text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded font-bold">+32.4%</span>
+                          <span className="text-zinc-500">vs $10,000.00</span>
                         </div>
-                      ))}
-                    </div>
-
-                    {/* Main Equity Chart & Recent Trade Rows */}
-                    <div className="grid sm:grid-cols-5 gap-3">
-                      {/* SVG Equity Curve */}
-                      <div className="sm:col-span-3 bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-4">
-                        <div className="flex items-center justify-between mb-3">
-                          <div>
-                            <p className="text-[10px] font-extrabold uppercase tracking-widest text-zinc-500">Cumulative Equity Curve</p>
-                            <p className="text-lg font-black text-white font-mono mt-0.5">$24,830.00</p>
-                          </div>
-                          <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full font-mono">+15.2%</span>
-                        </div>
-                        <svg viewBox="0 0 380 75" className="w-full h-20" preserveAspectRatio="none">
-                          <defs>
-                            <linearGradient id="eqGradMain" x1="0" x2="0" y1="0" y2="1">
-                              <stop offset="0%" stopColor="#6366f1" stopOpacity="0.4" />
-                              <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
-                            </linearGradient>
-                          </defs>
-                          <path
-                            d="M0,65 C25,60 50,52 75,46 C100,40 115,45 140,36 C165,27 180,32 210,22 C240,12 255,18 285,10 C315,4 345,7 380,2"
-                            fill="none"
-                            stroke="#6366f1"
-                            strokeWidth="2.5"
-                            strokeLinecap="round"
-                            className="equity-line"
-                          />
-                          <path
-                            d="M0,65 C25,60 50,52 75,46 C100,40 115,45 140,36 C165,27 180,32 210,22 C240,12 255,18 285,10 C315,4 345,7 380,2 L380,75 L0,75 Z"
-                            fill="url(#eqGradMain)"
-                          />
-                        </svg>
                       </div>
 
-                      {/* Recent Trade List */}
-                      <div className="sm:col-span-2 bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-4 space-y-2">
-                        <p className="text-[10px] font-extrabold uppercase tracking-widest text-zinc-500 mb-2">Live Trade History</p>
-                        {[
-                          { sym: 'SPY 580C', pnl: '+$312.50', win: true },
-                          { sym: 'QQQ 490C', pnl: '+$245.00', win: true },
-                          { sym: 'NVDA 125P', pnl: '-$84.00', win: false },
-                          { sym: 'IWM 220C', pnl: '+$190.00', win: true },
-                        ].map((t, idx) => (
-                          <div key={idx} className="flex items-center justify-between py-1.5 border-b border-zinc-800/60 last:border-0 text-xs font-mono">
-                            <div className="flex items-center gap-2">
-                              <span className={`w-1.5 h-1.5 rounded-full ${t.win ? 'bg-emerald-400' : 'bg-red-400'}`} />
-                              <span className="font-bold text-zinc-200">{t.sym}</span>
-                            </div>
-                            <span className={`font-bold ${t.win ? 'text-emerald-400' : 'text-red-400'}`}>{t.pnl}</span>
+                      <div className="bg-zinc-900/90 border border-zinc-800 rounded-2xl p-3.5 space-y-1">
+                        <span className="text-[10px] font-extrabold uppercase tracking-widest text-zinc-400">Net PnL</span>
+                        <p className="text-xl font-black font-mono text-emerald-400">+$3,240.50</p>
+                        <p className="text-[10px] text-zinc-500 font-mono">42 closed trades</p>
+                      </div>
+
+                      <div className="bg-zinc-900/90 border border-zinc-800 rounded-2xl p-3.5 space-y-1">
+                        <span className="text-[10px] font-extrabold uppercase tracking-widest text-zinc-400">Win Rate</span>
+                        <p className="text-xl font-black font-mono text-white">68.4%</p>
+                        <p className="text-[10px] font-mono text-zinc-400">
+                          <span className="text-emerald-400 font-bold">27W</span> · <span className="text-red-400 font-bold">12L</span> · <span className="text-amber-400 font-bold">3BE</span>
+                        </p>
+                      </div>
+
+                      <div className="bg-zinc-900/90 border border-zinc-800 rounded-2xl p-3.5 space-y-1">
+                        <span className="text-[10px] font-extrabold uppercase tracking-widest text-zinc-400">Today PnL</span>
+                        <p className="text-xl font-black font-mono text-emerald-400">+$480.00</p>
+                        <p className="text-[10px] text-zinc-500 font-mono">3 trades today</p>
+                      </div>
+                    </div>
+
+                    {/* KPI Row 2: Analytical Metrics */}
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+                      <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-xl p-3">
+                        <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 block mb-1">Avg Win</span>
+                        <p className="text-base font-black font-mono text-emerald-400">+$312.50</p>
+                        <p className="text-[9px] text-zinc-500 font-mono">per winning trade</p>
+                      </div>
+                      <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-xl p-3">
+                        <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 block mb-1">Avg Loss</span>
+                        <p className="text-base font-black font-mono text-red-400">-$84.00</p>
+                        <p className="text-[9px] text-zinc-500 font-mono">per losing trade</p>
+                      </div>
+                      <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-xl p-3">
+                        <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 block mb-1">Profit Factor</span>
+                        <p className="text-base font-black font-mono text-emerald-400">3.72</p>
+                        <p className="text-[9px] text-zinc-500 font-mono">avg win ÷ avg loss</p>
+                      </div>
+                      <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-xl p-3">
+                        <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 block mb-1">Best Trade</span>
+                        <p className="text-base font-black font-mono text-emerald-400">+$620.00</p>
+                        <p className="text-[9px] text-zinc-500 font-mono truncate">SPY 580C 0DTE</p>
+                      </div>
+                    </div>
+
+                    {/* Main Layout Grid (2/3 Left vs 1/3 Right) */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                      {/* Left 2/3: Equity Curve & Today's Trades */}
+                      <div className="lg:col-span-2 space-y-3">
+                        {/* Equity Curve SVG */}
+                        <div className="bg-zinc-900/90 border border-zinc-800 rounded-2xl p-4 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-white font-mono">Cumulative Equity Curve</span>
+                            <span className="text-[10px] font-mono text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">+32.4% Total Return</span>
                           </div>
-                        ))}
+                          <svg viewBox="0 0 380 75" className="w-full h-20" preserveAspectRatio="none">
+                            <defs>
+                              <linearGradient id="eqGradMain" x1="0" x2="0" y1="0" y2="1">
+                                <stop offset="0%" stopColor="#6366f1" stopOpacity="0.4" />
+                                <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
+                              </linearGradient>
+                            </defs>
+                            <path
+                              d="M0,65 C25,60 50,52 75,46 C100,40 115,45 140,36 C165,27 180,32 210,22 C240,12 255,18 285,10 C315,4 345,7 380,2"
+                              fill="none"
+                              stroke="#6366f1"
+                              strokeWidth="2.5"
+                              strokeLinecap="round"
+                              className="equity-line"
+                            />
+                            <path
+                              d="M0,65 C25,60 50,52 75,46 C100,40 115,45 140,36 C165,27 180,32 210,22 C240,12 255,18 285,10 C315,4 345,7 380,2 L380,75 L0,75 Z"
+                              fill="url(#eqGradMain)"
+                            />
+                          </svg>
+                        </div>
+
+                        {/* Today's Trades Table */}
+                        <div className="bg-zinc-900/90 border border-zinc-800 rounded-2xl p-4 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-white font-mono">Today&apos;s Trades Log</span>
+                            <span className="text-[10px] font-mono text-zinc-500">3 Trades</span>
+                          </div>
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-left text-[11px] font-mono">
+                              <thead>
+                                <tr className="text-zinc-500 uppercase text-[9px] border-b border-zinc-800">
+                                  <th className="pb-1.5 font-bold">Contract</th>
+                                  <th className="pb-1.5 font-bold">Side</th>
+                                  <th className="pb-1.5 font-bold">Entry/Exit</th>
+                                  <th className="pb-1.5 font-bold text-right">Net P&L</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-zinc-800/60 font-semibold text-zinc-200">
+                                <tr>
+                                  <td className="py-1.5 text-white">SPY 580C 0DTE</td>
+                                  <td className="py-1.5 text-emerald-400">CALL</td>
+                                  <td className="py-1.5 text-zinc-400">$1.85 → $2.48</td>
+                                  <td className="py-1.5 text-right text-emerald-400">+$312.50</td>
+                                </tr>
+                                <tr>
+                                  <td className="py-1.5 text-white">QQQ 490C 1DTE</td>
+                                  <td className="py-1.5 text-emerald-400">CALL</td>
+                                  <td className="py-1.5 text-zinc-400">$2.10 → $2.92</td>
+                                  <td className="py-1.5 text-right text-emerald-400">+$245.00</td>
+                                </tr>
+                                <tr>
+                                  <td className="py-1.5 text-white">NVDA 125P 3DTE</td>
+                                  <td className="py-1.5 text-red-400">PUT</td>
+                                  <td className="py-1.5 text-zinc-400">$1.40 → $0.98</td>
+                                  <td className="py-1.5 text-right text-red-400">-$84.00</td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right 1/3: Donut Chart & Accounts Overview */}
+                      <div className="space-y-3">
+                        {/* Result Donut Chart SVG */}
+                        <div className="bg-zinc-900/90 border border-zinc-800 rounded-2xl p-4 space-y-2">
+                          <span className="text-xs font-bold text-white font-mono block">Win / Loss Distribution</span>
+                          <div className="flex items-center justify-between pt-1">
+                            <svg viewBox="0 0 100 100" className="w-20 h-20">
+                              <circle cx="50" cy="50" r="38" fill="none" stroke="#10b981" strokeWidth="12" strokeDasharray="163 238" strokeDashoffset="0" />
+                              <circle cx="50" cy="50" r="38" fill="none" stroke="#ef4444" strokeWidth="12" strokeDasharray="68 238" strokeDashoffset="-163" />
+                              <circle cx="50" cy="50" r="38" fill="none" stroke="#f59e0b" strokeWidth="12" strokeDasharray="7 238" strokeDashoffset="-231" />
+                            </svg>
+                            <div className="space-y-1 text-[11px] font-mono">
+                              <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500" /><span className="text-zinc-300">Win: 68.4%</span></div>
+                              <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-500" /><span className="text-zinc-300">Loss: 28.6%</span></div>
+                              <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber-500" /><span className="text-zinc-300">BE: 3.0%</span></div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Accounts Overview */}
+                        <div className="bg-zinc-900/90 border border-zinc-800 rounded-2xl p-4 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-white font-mono">Primary Live Account</span>
+                            <span className="text-[9px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full font-bold border border-emerald-500/20">LIVE</span>
+                          </div>
+                          <p className="text-lg font-black text-white font-mono">$13,240.50</p>
+                          <div className="space-y-1 pt-1">
+                            <div className="flex justify-between text-[10px] font-mono text-zinc-400">
+                              <span>Target Progress</span>
+                              <span className="text-indigo-400 font-bold">66% of $20,000</span>
+                            </div>
+                            <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                              <div className="h-full bg-indigo-500 rounded-full" style={{ width: '66%' }} />
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -477,11 +589,11 @@ export default function LandingPage() {
                 {activeTab === 'coach' && (
                   <div className="space-y-4 animate-in fade-in duration-300">
                     <div className="grid sm:grid-cols-3 gap-3">
-                      {/* Coach Score Card */}
-                      <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-4 space-y-3">
+                      {/* Execution Score Breakdown */}
+                      <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-4.5 space-y-4">
                         <div className="flex items-center gap-2">
                           <Brain className="w-4 h-4 text-indigo-400" />
-                          <span className="text-xs font-bold text-white">Execution Scores</span>
+                          <span className="text-xs font-extrabold text-white">Execution Scores</span>
                         </div>
                         {[
                           { label: 'Overall Discipline', score: 81, color: 'text-indigo-400' },
@@ -493,27 +605,32 @@ export default function LandingPage() {
                               <span className="text-zinc-400">{label}</span>
                               <span className={`font-mono font-bold ${color}`}>{score}/100</span>
                             </div>
-                            <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                              <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${score}%` }} />
+                            <div className="h-2 bg-zinc-800/80 rounded-full overflow-hidden">
+                              <div className="h-full bg-indigo-500 rounded-full transition-all duration-500" style={{ width: `${score}%` }} />
                             </div>
                           </div>
                         ))}
                       </div>
 
-                      {/* Coach Live Response Bubble */}
-                      <div className="sm:col-span-2 bg-indigo-950/30 border border-indigo-500/25 rounded-2xl p-4.5 space-y-3">
-                        <div className="flex items-center justify-between">
+                      {/* Coach Live Mentor Interface */}
+                      <div className="sm:col-span-2 bg-indigo-950/40 border border-indigo-500/30 rounded-2xl p-5 space-y-3.5">
+                        <div className="flex items-center justify-between border-b border-indigo-500/20 pb-2.5">
                           <div className="flex items-center gap-2">
                             <Sparkles className="w-4 h-4 text-indigo-400" />
-                            <span className="text-xs font-bold text-indigo-300">DeepSeek AI Mentor Analysis</span>
+                            <span className="text-xs font-extrabold text-indigo-200">DeepSeek Dual-Intelligence Mentor</span>
                           </div>
-                          <span className="text-[10px] font-mono text-zinc-500">Educational Context</span>
+                          <span className="text-[10px] font-mono text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-md border border-indigo-500/20">Latency: 140ms</span>
                         </div>
-                        <p className="text-xs text-zinc-300 leading-relaxed font-sans">
-                          &ldquo;Analysis of your last 42 options trades shows an 82% win rate on Tuesdays versus 54% on Fridays. Your average hold time on winning trades is 2.3× longer than on losing trades. Consider capping Friday risk per trade at 1% of account equity until setup selection improves.&rdquo;
+
+                        <p className="text-xs text-zinc-200 leading-relaxed font-sans">
+                          &ldquo;Analysis of your last 42 options trades shows an 82% win rate on Tuesdays versus 54% on Fridays. Your average hold time on winning trades is 2.3× longer than on losing trades. Capping Friday position sizing at 1% of account equity protects weekly P&L.&rdquo;
                         </p>
-                        <div className="flex items-center gap-2 text-[10px] text-zinc-500 font-mono pt-1">
-                          <ShieldCheck className="w-3.5 h-3.5 text-zinc-600" /> Isolated to your personal trade history · Not investment advice
+
+                        <div className="flex items-center justify-between pt-2 text-[10px] text-zinc-400 font-mono border-t border-indigo-500/10">
+                          <span className="flex items-center gap-1.5">
+                            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> Isolated to your trade log
+                          </span>
+                          <span className="text-zinc-500">Educational Insights Only</span>
                         </div>
                       </div>
                     </div>
@@ -524,19 +641,19 @@ export default function LandingPage() {
                   <div className="space-y-4 animate-in fade-in duration-300">
                     <div className="grid sm:grid-cols-2 gap-3">
                       {/* Profit Factor Leaderboard */}
-                      <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-4 space-y-3">
-                        <p className="text-[10px] font-extrabold uppercase tracking-widest text-zinc-500">Profit Factor by Ticker</p>
+                      <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-4.5 space-y-3.5">
+                        <p className="text-[10px] font-extrabold uppercase tracking-widest text-zinc-500">Profit Factor by Symbol</p>
                         {[
                           { sym: 'SPY', pf: '2.84', winRate: '72%', status: 'Primary Edge' },
                           { sym: 'QQQ', pf: '2.12', winRate: '68%', status: 'Consistent' },
                           { sym: 'NVDA', pf: '1.95', winRate: '64%', status: 'Profitable' },
                           { sym: 'AAPL', pf: '0.74', winRate: '38%', status: 'Leaking Capital' },
                         ].map((row) => (
-                          <div key={row.sym} className="flex items-center justify-between text-xs py-1.5 border-b border-zinc-800/60 last:border-0 font-mono">
+                          <div key={row.sym} className="flex items-center justify-between text-xs py-2 border-b border-zinc-800/60 last:border-0 font-mono">
                             <span className="font-bold text-white w-12">{row.sym}</span>
                             <span className="text-zinc-400">PF: <strong className={Number(row.pf) >= 1.5 ? 'text-emerald-400' : 'text-red-400'}>{row.pf}</strong></span>
                             <span className="text-zinc-400">Win: {row.winRate}</span>
-                            <span className={`text-[10px] px-2 py-0.5 rounded-md font-sans font-bold ${Number(row.pf) >= 1.5 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
+                            <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-sans font-bold ${Number(row.pf) >= 1.5 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
                               {row.status}
                             </span>
                           </div>
@@ -544,7 +661,7 @@ export default function LandingPage() {
                       </div>
 
                       {/* Day of Week Heatmap Breakdown */}
-                      <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-4 space-y-3">
+                      <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-4.5 space-y-3.5">
                         <p className="text-[10px] font-extrabold uppercase tracking-widest text-zinc-500">Day-of-Week Expectancy</p>
                         {[
                           { day: 'Mon', pnl: '+$640.00', pct: 80, green: true },
@@ -568,17 +685,17 @@ export default function LandingPage() {
 
                 {activeTab === 'market' && (
                   <div className="space-y-4 animate-in fade-in duration-300">
-                    <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-4.5 space-y-4">
+                    <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-5 space-y-4">
                       <div className="flex items-center justify-between">
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="text-base font-extrabold text-white font-mono">SPY</span>
+                            <span className="text-lg font-black text-white font-mono">SPY</span>
                             <span className="text-xs text-zinc-400">S&P 500 ETF Trust</span>
                           </div>
-                          <p className="text-xl font-black text-emerald-400 font-mono mt-0.5">$584.20 <span className="text-xs font-bold">+1.12%</span></p>
+                          <p className="text-2xl font-black text-emerald-400 font-mono mt-0.5">$584.20 <span className="text-xs font-bold">+1.12%</span></p>
                         </div>
                         <div className="flex gap-2">
-                          <Link href="/trades/new" className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition-all">
+                          <Link href="/trades/new" className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition-all shadow-md">
                             Log Trade
                           </Link>
                         </div>
@@ -591,13 +708,13 @@ export default function LandingPage() {
                           <span>Current: $584.20</span>
                           <span>52W High: $585.50</span>
                         </div>
-                        <div className="h-2 bg-zinc-800 rounded-full overflow-hidden relative">
+                        <div className="h-2.5 bg-zinc-800 rounded-full overflow-hidden relative p-0.5">
                           <div className="h-full bg-gradient-to-r from-indigo-500 to-emerald-400 rounded-full" style={{ width: '98%' }} />
                         </div>
                       </div>
 
-                      {/* Market stats grid */}
-                      <div className="grid grid-cols-4 gap-2 text-xs font-mono pt-2 border-t border-zinc-800">
+                      {/* Market Stats Grid */}
+                      <div className="grid grid-cols-4 gap-2 text-xs font-mono pt-3 border-t border-zinc-800">
                         <div><span className="text-zinc-500 text-[10px] block">Open</span><span className="text-zinc-200 font-bold">$581.10</span></div>
                         <div><span className="text-zinc-500 text-[10px] block">Prev Close</span><span className="text-zinc-200 font-bold">$577.72</span></div>
                         <div><span className="text-zinc-500 text-[10px] block">Volume</span><span className="text-zinc-200 font-bold">64.2M</span></div>
@@ -615,14 +732,14 @@ export default function LandingPage() {
                         { title: 'VIX Spike Reversal', winRate: '64% Win Rate', mood: 'Disciplined', color: 'text-indigo-400 border-indigo-500/20 bg-indigo-500/10' },
                         { title: 'FOMO Chase Pattern', winRate: '22% Win Rate', mood: 'Regret', color: 'text-red-400 border-red-500/20 bg-red-500/10' },
                       ].map(({ title, winRate, mood, color }) => (
-                        <div key={title} className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-4 space-y-3">
+                        <div key={title} className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-4.5 space-y-3">
                           <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold text-white">{title}</span>
-                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${color}`}>{mood}</span>
+                            <span className="text-xs font-extrabold text-white">{title}</span>
+                            <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold border ${color}`}>{mood}</span>
                           </div>
                           <p className="text-xs font-mono font-bold text-zinc-300">{winRate}</p>
-                          <div className="h-20 bg-zinc-950 rounded-xl border border-zinc-800 flex items-center justify-center text-[10px] text-zinc-600 font-mono">
-                            [ Chart Screenshot ]
+                          <div className="h-24 bg-zinc-950 rounded-xl border border-zinc-800/80 flex items-center justify-center text-[10px] text-zinc-500 font-mono">
+                            [ High-Res Chart Image ]
                           </div>
                         </div>
                       ))}
@@ -892,12 +1009,12 @@ export default function LandingPage() {
       <footer className="border-t border-zinc-800/80 py-12 px-5 sm:px-8 bg-zinc-950">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-3">
-            <div className="w-7 h-7 rounded-xl overflow-hidden border border-zinc-700 flex-shrink-0 bg-zinc-900 p-0.5">
-              <img src="/logo.png" alt="TradeVault" className="w-full h-full object-cover rounded-lg" />
+            <div className="w-11 h-11 flex-shrink-0">
+              <img src="/logo.png" alt="TradeVault" className="w-full h-full object-contain drop-shadow-md" />
             </div>
             <div className="flex flex-col">
-              <span className="text-sm font-extrabold text-zinc-300 font-mono tracking-tight leading-none">TradeVault</span>
-              <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest leading-tight mt-0.5">Options Journal</span>
+              <span className="text-base font-black text-zinc-300 font-mono tracking-tight leading-none">TradeVault</span>
+              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest leading-tight mt-1">Options Journal</span>
             </div>
           </div>
 

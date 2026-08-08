@@ -224,8 +224,8 @@ export default function LoginPage() {
     <div className="bg-[#0e1017]/90 backdrop-blur-xl border border-slate-800/90 rounded-3xl p-7 sm:p-8 shadow-2xl space-y-6">
       {/* Brand Header */}
       <div className="text-center space-y-2">
-        <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl overflow-hidden border border-slate-800 p-0.5 mb-1 bg-white/5">
-          <img src="/logo.png" alt="TradeVault Logo" className="w-full h-full object-cover rounded-lg" />
+        <div className="inline-flex items-center justify-center w-16 h-16 mb-2 flex-shrink-0">
+          <img src="/logo.png" alt="TradeVault Logo" className="w-full h-full object-contain drop-shadow-lg" />
         </div>
         <h1 className="text-xl font-black tracking-tight text-white font-mono">TradeVault</h1>
         <p className="text-xs text-indigo-400 font-bold uppercase tracking-wider">Options Journal</p>
