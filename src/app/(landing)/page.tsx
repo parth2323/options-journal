@@ -26,26 +26,30 @@ import {
 
 /* ─────────────────────────── Data Structures ─────────────────────────── */
 
-const journalStats = [
+const processPillars = [
   {
-    figure: '68%',
-    context: 'of active journalers achieve positive profit factor within 90 days',
-    source: 'TraderSync internal cohort study, 5,000 accounts',
+    title: 'Daily Session Audits',
+    highlight: 'Process Consistency',
+    body: 'Traders who systematically record trade rationale and execution rules reduce repeat impulse errors compared to unmeasured trading.',
+    tag: 'Behavioral Discipline',
   },
   {
-    figure: '3×',
-    context: 'higher expectancy for traders who review sessions daily vs. weekly',
-    source: 'ForTraders.com analysis, 2023',
+    title: 'Expectancy Tracking',
+    highlight: 'Quantified Edge',
+    body: 'Tagging setups, session time-of-day, and market regimes reveals which strategies carry positive expectancy vs. hidden capital leaks.',
+    tag: 'Performance Analytics',
   },
   {
-    figure: '80%',
-    context: 'of losing traders cite "no review process" as a primary contributing factor',
-    source: 'Bookmap trader survey, 2023',
+    title: 'Cognitive Bias Mitigation',
+    highlight: 'Objective Mirror',
+    body: 'Human memory selectively recalls large wins while blurring recurring execution flaws. Written trade logs provide an unvarnished mirror.',
+    tag: 'Trading Psychology',
   },
   {
-    figure: '90%',
-    context: 'of retail options traders lose money — most never identify the pattern',
-    source: 'CBOE, SEC retail investor studies',
+    title: 'Risk & Sizing Control',
+    highlight: 'Account Longevity',
+    body: 'Most retail losses stem from position size expansion and stop-loss widening — structural errors that remain invisible without trade logs.',
+    tag: 'Risk Management',
   },
 ];
 
@@ -71,20 +75,14 @@ const expertQuotes = [
   {
     quote:
       '"Successful traders know that a consistent and systematic review of their daily trading activities is the direct path to growing and improving."',
-    name: 'Van K. Tharp, Ph.D.',
-    title: 'Author, Trade Your Way to Financial Freedom',
+    name: 'Dr. Van K. Tharp',
+    title: 'Trade Your Way to Financial Freedom (McGraw-Hill)',
   },
   {
     quote:
-      '"A trading journal keeps you constructive, keeps you learning, and keeps you working on the things that are most important. It is not a tool for rehashing the day — it is a tool for self-development."',
+      '"A trading journal keeps you constructive, keeps you learning, and keeps you working on the things that are most important. It is a tool for self-development."',
     name: 'Dr. Brett Steenbarger',
-    title: 'Clinical Psychologist, Forbes trading columnist',
-  },
-  {
-    quote:
-      '"Trading without a diary is like shaving without a mirror."',
-    name: 'Industry Axiom',
-    title: 'Repeated across Trademetria, SMC Trade Online, ForTraders',
+    title: 'Enhancing Trader Performance (Wiley Trading)',
   },
 ];
 
@@ -654,32 +652,34 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Section 1: The Research & Behavioral Finance ──────────────────── */}
+      {/* ── Section 1: Behavioral Reality & Process ─────────────────────────────── */}
       <section id="research" className="py-24 px-5 sm:px-8">
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-indigo-400 mb-4">
             <ShieldCheck className="w-4 h-4" />
-            Behavioral Research & Market Reality
+            Trading Psychology & Process
           </div>
           <div className="grid lg:grid-cols-2 gap-10 items-start mb-16">
             <h2 className="text-3xl sm:text-4xl font-extrabold text-white leading-tight">
-              Most traders fail for a reason that has nothing to do with strategy.
+              Why unmeasured trading leads to recurring execution leaks.
             </h2>
             <p className="text-zinc-400 text-base leading-relaxed">
-              Research by the SEC, CBOE, and independent trading analytics cohorts consistently reveals that 70–90% of retail options traders lose money. The root cause is rarely technical analysis — it is the absence of a disciplined, quantitative review loop.
+              Trading psychology and performance research show that long-term consistency comes from mastering execution and tracking edge, not predicting market direction. Without a written journal, execution errors repeat silently.
             </p>
           </div>
 
-          {/* Research Stats Grid */}
+          {/* Process Pillars Grid */}
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {journalStats.map(({ figure, context, source }) => (
-              <div key={figure} className="bg-[#0e0e12] border border-zinc-800/80 rounded-2xl p-5 flex flex-col justify-between hover:border-zinc-700 transition-colors">
+            {processPillars.map(({ title, highlight, body, tag }) => (
+              <div key={title} className="bg-[#0e0e12] border border-zinc-800/80 rounded-2xl p-5 flex flex-col justify-between hover:border-zinc-700 transition-colors">
                 <div>
-                  <div className="w-8 h-0.5 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 mb-4" />
-                  <p className="text-4xl font-black text-white font-mono tabular-nums mb-2">{figure}</p>
-                  <p className="text-xs text-zinc-300 leading-relaxed font-sans">{context}</p>
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 rounded-full inline-block mb-3">
+                    {tag}
+                  </span>
+                  <h3 className="text-base font-bold text-white mb-1">{title}</h3>
+                  <p className="text-xs font-bold text-zinc-400 mb-3">{highlight}</p>
+                  <p className="text-xs text-zinc-400 leading-relaxed">{body}</p>
                 </div>
-                <p className="text-[10px] text-zinc-500 font-medium mt-4 pt-3 border-t border-zinc-800/60">{source}</p>
               </div>
             ))}
           </div>
@@ -711,14 +711,14 @@ export default function LandingPage() {
             ))}
           </div>
 
-          {/* Expert Quotes */}
-          <div className="grid sm:grid-cols-3 gap-4">
+          {/* Published Book Quotes */}
+          <div className="grid sm:grid-cols-2 gap-4">
             {expertQuotes.map(({ quote, name, title }) => (
-              <blockquote key={name} className="bg-zinc-900/40 border border-zinc-800/60 rounded-2xl p-5 flex flex-col justify-between">
-                <p className="text-xs text-zinc-300 italic leading-relaxed mb-4">{quote}</p>
+              <blockquote key={name} className="bg-zinc-900/40 border border-zinc-800/60 rounded-2xl p-6 flex flex-col justify-between">
+                <p className="text-xs sm:text-sm text-zinc-300 italic leading-relaxed mb-4">{quote}</p>
                 <footer>
                   <p className="text-xs font-bold text-white">{name}</p>
-                  <p className="text-[10px] text-zinc-500 mt-0.5">{title}</p>
+                  <p className="text-[11px] text-zinc-500 mt-0.5">{title}</p>
                 </footer>
               </blockquote>
             ))}
