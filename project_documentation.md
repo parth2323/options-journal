@@ -1,6 +1,6 @@
 # TradeVault — Full Project Documentation
 
-> **Last Updated:** August 7, 2026 (Post-12:43 AM Commits)  
+> **Last Updated:** August 8, 2026 (Post-1:10 PM Commits)  
 > **Version:** 0.1.0  
 > **Brand Name:** TradeVault  
 > **Official Slogan:** *Vault Your Trades* | *"Master Your Edge. Vault Your Trades."*  
@@ -20,7 +20,8 @@
 8. [AI Trading Mentor (Coach)](#8-ai-trading-mentor-coach)
 9. [Legal & Regulatory Disclaimer Fencing](#9-legal--regulatory-disclaimer-fencing)
 10. [Data Layer & Multi-Tenant Isolation](#10-data-layer--multi-tenant-isolation)
-11. [Summary of Commits Since August 7, 2026 12:43 AM](#11-summary-of-commits-since-august-7-2026-1243-am)
+11. [Public Landing Page & Behavioral Finance Research](#11-public-landing-page--behavioral-finance-research)
+12. [Summary of Recent Commits (August 7 – August 8, 2026)](#12-summary-of-recent-commits-august-7--august-8-2026)
 
 ---
 
@@ -347,10 +348,33 @@ To mitigate legal exposure under SEC / FINRA / FTC rules regarding automated AI 
 
 ---
 
-## 11. Summary of Commits Since August 7, 2026 12:43 AM
+## 11. Public Landing Page & Behavioral Finance Research
+
+TradeVault features a public, unauthenticated landing page at `/` (with the authenticated dashboard residing at `/dashboard`). The landing page is designed around research-backed trading journal metrics and behavioral finance failure modes.
+
+### Key Sections & Design Architecture
+1. **Hero & Interactive Terminal Preview**: Headline *"Stop trading blind. Build your edge with data."* paired with an animated live ticker bar, 4 KPI cards, SVG equity curve, recent trade rows, and AI Coach performance score bars.
+2. **Behavioral Finance Research & Statistics**:
+   - **68%** of active journalers achieve a positive profit factor within 90 days (TraderSync 5,000-account cohort study).
+   - **3×** higher expectancy for traders who review sessions daily vs weekly (ForTraders analysis).
+   - **80%** of losing traders cite "no review process" as a primary factor (Bookmap survey).
+   - **90%** of retail options traders lose money — most never identify their behavioral pattern (SEC / CBOE studies).
+3. **The Costs of Not Journaling**:
+   - **The Memory Trap**: Human memory selectively recalls big wins and compresses repeated errors into a blur.
+   - **Invisible Behavioral Loops**: Revenge trading, overtrading after wins, and widening stop losses repeat without a journal mirror.
+   - **No Quantified Edge**: Trading remains guesswork without setup tags, time-of-day filtering, and R-multiple tracking.
+4. **Expert Trading Psychology Insights**: Quotes from Dr. Van K. Tharp, Dr. Brett Steenbarger, and industry axioms (*"Trading without a diary is like shaving without a mirror"*).
+5. **Structured 3-Step Performance Method**: **01 Log Every Trade** → **02 Surface Patterns Automatically** → **03 Get Data-Driven AI Coaching**.
+
+---
+
+## 12. Summary of Recent Commits (August 7 – August 8, 2026)
 
 | Commit | Author | Description |
 |---|---|---|
+| `47abadf` | Parth Patel | **feat(auth):** Enhance email verification flow, add email inbox skeleton preview modal & refine branding (`TradeVault — Options Journal`). |
+| `a07b688` | Parth Patel | **feat(landing):** Professional redesign — research-backed journal content, minimal zinc-950 design, statistics & expert quotes. |
+| `0427213` | Parth Patel | **feat:** Add public landing page at `/` — move authenticated dashboard to `/dashboard`, update middleware & sidebar routing. |
 | `fbff845` | Parth Patel | **legal:** Add comprehensive SEC/FINRA regulatory risk disclaimers across AI Coach API, UI, and Market pages. |
 | `5b8d6f7` | Parth Patel | **docs:** Update TradeVault project documentation covering all features since Aug 7, 2026 12:43 AM. |
 | `fb9037e` | Parth Patel | **brand:** Update branding to TradeVault with official slogan *"Vault Your Trades"*. |
@@ -362,4 +386,4 @@ To mitigate legal exposure under SEC / FINRA / FTC rules regarding automated AI 
 
 ---
 
-*Generated from comprehensive codebase audit on August 7, 2026.*
+*Generated from comprehensive codebase audit on August 8, 2026.*
