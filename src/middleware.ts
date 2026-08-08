@@ -51,7 +51,23 @@ export async function middleware(request: NextRequest) {
     return supabaseResponse;
   }
 
-  // 3. Auth pages & callback
+  // 3. Public pages — always accessible without auth
+  const isPublicPage =
+    pathname === '/' ||          // Landing page
+    pathname === '/terms' ||
+    pathname === '/privacy';
+
+  if (isPublicPage) {
+    // If user is already authenticated and visiting the landing page, send to dashboard
+    if (user && pathname === '/') {
+      const url = request.nextUrl.clone();
+      url.pathname = '/dashboard';
+      return NextResponse.redirect(url);
+    }
+    return supabaseResponse;
+  }
+
+  // 4. Auth pages & callback
   const isAuthPage =
     pathname === '/login' ||
     pathname === '/signup' ||
@@ -61,7 +77,7 @@ export async function middleware(request: NextRequest) {
   // If user is authenticated and trying to visit login/signup, redirect to dashboard
   if (user && isAuthPage && !pathname.startsWith('/auth/callback')) {
     const url = request.nextUrl.clone();
-    url.pathname = '/';
+    url.pathname = '/dashboard';
     return NextResponse.redirect(url);
   }
 

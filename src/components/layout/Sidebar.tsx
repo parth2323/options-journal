@@ -31,7 +31,7 @@ import { FeedbackModal } from '@/components/feedback/FeedbackModal';
 import { toast } from 'sonner';
 
 const navItems = [
-  { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/trades', label: 'Trades', icon: TableProperties },
   { href: '/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/ideas', label: 'Ideas', icon: Lightbulb },
@@ -145,7 +145,7 @@ export function Sidebar() {
         collapsed && 'flex flex-col items-center overflow-hidden'
       )}>
         {navItems.map(({ href, label, icon: Icon }) => {
-          const isActive = href === '/' ? pathname === '/' : pathname.startsWith(href);
+          const isActive = href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(href);
           return (
             <Link
               key={href}
